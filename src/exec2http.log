@@ -1,0 +1,10 @@
+2013/10/20 16:49:52 exec2http.go:34: listen at :8310
+2013/10/20 16:50:02 exec2http.go:53: loc: 
+2013/10/20 16:50:02 exec2http.go:53: loc: 
+2013/10/20 16:50:02 exec2http.go:53: loc: 
+2013/10/20 16:54:40 exec2http.go:53: loc: 
+2013/10/20 16:54:49 exec2http.go:53: loc: http://gouwu.baidu.com/sale/xxx
+2013/10/20 16:59:59 exec2http.go:53: loc: http://gouwu.baidu.com/sale/xxx
+2013/10/20 17:00:15 exec2http.go:53: loc: http://gouwu.baidu.com/sale/xxx
+2013/10/20 17:01:17 exec2http.go:53: loc: http://gouwu.baidu.com/sale/xxx
+2013/10/20 17:02:25 exec2http.go:34: listen at :8310
