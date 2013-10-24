@@ -175,7 +175,16 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  
 	  if(format=="" || format=="html"){
 	    fmt.Fprintf(w,fmt.Sprintf(str,conf.charset,conf.name,outStr))
-	   }else{
+	   }else if(format=="jsonp"){
+	       cb:=r.FormValue("cb")
+	       if(cb==""){
+	           cb="cb"
+	        }
+	       m:=make(map[string]string)
+	       m["data"]=outStr
+	       jsonByte,_:=json.Marshal(m)
+	       fmt.Fprintf(w,fmt.Sprintf(`%s(%s)`,cb,string(jsonByte)))
+	   }else{ 
 	    fmt.Fprintf(w,outStr)
 	   }
 }
@@ -185,6 +194,11 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
          <head>
          <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
          <title>{{.title}} cmd2http</title>
+         <style>
+				.cpanel{background:#ffffff;border-radius:10px;margin-bottom: 10px;border:1px solid #e6eaed;}
+				.cpanel .hd{background:#e6eaed;padding: 3px 0 3px 10px;border-radius:10px 10px 0 0;color:#000;font-weight: bold;}
+				.cpanel .bd{padding: 10px;font-size:13px}
+         </style>
           <script>
             function $(id){
               return document.getElementById(id);
@@ -196,21 +210,31 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                     return false;
                     }
                 var _param=$('cmd').value+"?"+$('params').value;
-                $('div_url').innerHTML="http://"+location.host+"/"+_param;
+                var _url="http://"+location.host+"/"+_param;
+                $('div_url').innerHTML="<a href='"+_url+"' target='_blank'>"+_url+"</a>";
+                $('panel_result').style.display="block";
                 $('result').src=_param;
              }
           function cmd_change(){
-                $('msg').innerHTML=msg[$('cmd').value]||"";
+                $('msg').innerHTML="<br/>command defined : <b>"+(msg[$('cmd').value]||"")+"</b>";
              }
           </script>
         </head><body>
-          <h1>Help</h1>
-          <div>
-           <p>echo -n $wd $a $b|defaultValue </p>
-          <p>
-          http://localhost/<b>echo?wd=hello&a=world</b>
-             ==&gt;   <b>#echo -n hello world defaultValue</b> 
-          </p></div><br/>
+          <h1>cmd2http</h1>
+          <div class="cpanel">
+             <div class="hd">demo</div>
+             <div class='bd'>
+		          <p>echo -n $wd $a $b|defaultValue </p>
+		          <p>http://localhost/<b>echo?wd=hello&a=world</b>
+		             ==&gt;   <b>#echo -n hello world defaultValue</b> 
+		          </p>
+	          </div>
+          </div>
+          <br/>
+           <div class="cpanel">
+             <div class="hd">quick cmd</div>
+             <div class='bd'>
+             
           <form onsubmit='form_check();return false;'>
           cmd:<select id='cmd' onchange='cmd_change()'>
             <option value=''>pls choose cmd</option>
@@ -220,9 +244,21 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                <input type='submit'>
              <div id='msg'></div>
           </form>
-          <script> var msg={{.msgs}}</script>
-          <div id="div_url"></div>
-          <iframe id='result' name="result" src="about:_blank" style="border:none;width:800px" onload="this.height=1500;" ></iframe>
+          <br/>
+          </div>
+          </div>
+          <script> 
+          var msg={{.msgs}};
+	         function ifr_load(){
+				   $("result").height=window.frames[0].outerHeight;
+	            }
+          </script>
+           <div class="cpanel" style="display:none" id='panel_result'>
+           <div class="hd">result &nbsp;<span id="div_url"></spam></div>
+             <div class='bd'>
+               <iframe id='result' name="result" src="about:_blank" style="border:none;width:99%" onload="ifr_load()" ></iframe>
+            </div>
+          </div>
           </body></html>`;
         
        msgs:=make(map[string]string)
