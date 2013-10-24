@@ -2,7 +2,11 @@ cmd2http
 =========
 
 make system command as http service
+<pre>
+echo -n $wd $a $b|defaultValue 
 
+http://localhost/<b>echo?wd=hello&a=world</b> ==&gt;   <b>#echo -n hello world defaultValue</b> 
+</pre>
 config file
 <pre>    
 {
