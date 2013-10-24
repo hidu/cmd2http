@@ -3,7 +3,8 @@ cmd2http
 
 make system command as http service
 
-config file    
+config file
+<pre>    
 {
    port:8310,
    title:"super"
@@ -16,3 +17,4 @@ config file
         }
    }
 }
+</pre>
