@@ -16,7 +16,7 @@ import (
 	 "text/template"
 	 jsonConf "github.com/daviddengcn/go-ljson-conf"
    )
-var configPath=flag.String("conf","./exec2http.conf","config file")
+var configPath=flag.String("conf","./cmd2http.conf","config file")
 
 var port int
 
@@ -40,9 +40,9 @@ var config *jsonConf.Conf
 
 func main(){
    flag.Parse()
-   logFile,_:=os.OpenFile("./exec2http.log",os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
+   logFile,_:=os.OpenFile("./cmd2http.log",os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
    defer logFile.Close()
-//   log.SetOutput(logFile)
+   log.SetOutput(logFile)
 //    log.SetFlags(log.LstdFlags|log.Lshortfile)
     loadConfig()
     
@@ -163,7 +163,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  format:=r.FormValue("format")
 	  str:=`<!DOCTYPE html><html><head>
 	         <meta http-equiv='Content-Type' content='text/html; charset=%s' />
-	         <title>%s exec2http</title></head><body><pre>%s</pre></body></html>`
+	         <title>%s cmd2http</title></head><body><pre>%s</pre></body></html>`
 	         
 	  outStr:=out.String()
 	  logStr=logStr+fmt.Sprintf(" resLen:%d time_use:%v",len(outStr),time.Now().Sub(startTime))
@@ -179,7 +179,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
    str:=`<!DOCTYPE html><html>
          <head>
          <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-         <title>{{.title}} exec2http</title>
+         <title>{{.title}} cmd2http</title>
           <script>
             function $(id){
               return document.getElementById(id);
