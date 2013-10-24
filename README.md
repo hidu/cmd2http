@@ -1,4 +1,20 @@
-exec2http
+cmd2http
 =========
 
 make system command as http service
+
+config file
+====
+{
+   port:8310,
+   title:"super"
+   cmds:{
+      pwd:{
+          cmd:"pwd"
+       },
+      echo:{
+         cmd:"echo -n $wd|你好 $a $b"
+        }
+   }
+}
+====

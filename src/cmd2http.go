@@ -108,6 +108,7 @@ func startHttpServer(){
   
    addr:=fmt.Sprintf(":%d",port)
    log.Println("listen at",addr)
+   fmt.Println("listen at",addr)
    
    http.ListenAndServe(addr,nil)
 }
@@ -127,6 +128,10 @@ func Command(name string, args []string) *exec.Cmd {
 func myHandler_root(w http.ResponseWriter, r *http.Request){
      startTime:=time.Now()
 	  path:=strings.Trim(r.URL.Path,"/")
+	  if(path==""){
+	      myHandler_help(w,r)
+	      return;
+	   }
 	  logStr:=r.RemoteAddr+" req:"+r.RequestURI
 	  defer func(){
 	       log.Println(logStr)
@@ -200,7 +205,11 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
           </script>
         </head><body>
           <h1>Help</h1>
-          <div><p><b>echo -n $wd $a $b|你好 </b> (url params : wd=hello&a=world)
+          <div>
+           <p>echo -n $wd $a $b|defaultValue </p>
+          <p>
+          http://localhost/<b>echo?wd=hello&a=world</b>
+             ==&gt;   <b>#echo -n hello world defaultValue</b> 
           </p></div><br/>
           <form onsubmit='form_check();return false;'>
           cmd:<select id='cmd' onchange='cmd_change()'>
