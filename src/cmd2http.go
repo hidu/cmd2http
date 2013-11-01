@@ -221,6 +221,18 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
             function $(id){
               return document.getElementById(id);
                }
+           function jsonp(url){
+           var script = document.createElement('script');
+               script.setAttribute('src', url+"&format=jsonp&cb=callback");
+               document.getElementsByTagName('head')[0].appendChild(script); 
+               }
+               
+           function callback(data){
+                var doc=window.frames[0].document;
+                doc.open();
+					 doc.close();
+					 doc.body.innerHTML="<pre>"+data.data+"</pre>";
+               }
           function form_check(){
                var cmd=$('cmd').value;
                if(!cmd){
@@ -232,6 +244,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                 $('div_url').innerHTML="<a href='"+_url+"' target='_blank'>"+_url+"</a>";
                 $('panel_result').style.display="block";
                 $('result').src=_param;
+               /* jsonp(_param)*/
              }
           function cmd_change(){
                 $('msg').innerHTML="<br/>command defined : <b>"+(msg[$('cmd').value]||"")+"</b>";
@@ -270,11 +283,12 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
           <script> 
           var msg={{.msgs}};
 	         function ifr_load(){
-				   $("result").height=window.frames[0].outerHeight;
+	            $("result").height=50;
+				   $("result").height=window.frames[0].document.body.scrollHeight+40;
 	            }
           </script>
            <div class="cpanel" style="display:none" id='panel_result'>
-           <div class="hd">result &nbsp;<span id="div_url"></spam></div>
+           <div class="hd">result &nbsp;<span id="div_url"></span></div>
              <div class='bd'>
                <iframe id='result' name="result" src="about:_blank" style="border:none;width:99%" onload="ifr_load()" ></iframe>
             </div>
