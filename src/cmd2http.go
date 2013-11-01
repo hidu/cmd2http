@@ -215,6 +215,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 				.cpanel{background:#ffffff;border-radius:10px;margin-bottom: 10px;border:1px solid #e6eaed;}
 				.cpanel .hd{background:#e6eaed;padding: 3px 0 3px 10px;border-radius:10px 10px 0 0;color:#000;font-weight: bold;}
 				.cpanel .bd{padding: 10px;font-size:13px}
+				h1,p{margin:5px 0 5px}
          </style>
           <script>
             function $(id){
@@ -237,14 +238,16 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
              }
           </script>
         </head><body>
-          <h1>cmd2http</h1>
+          <h1>{{.title}}<font style='font-size:16px'>&nbsp;cmd2http</font></h1>
+          <div style='margin-bottom:5px'>{{.intro}}</div>
           <div class="cpanel">
              <div class="hd">demo</div>
              <div class='bd'>
-		          <p>echo -n $wd $a $b|defaultValue </p>
+		          <p>defined cmd: <b>echo -n $wd $a $b|defaultValue</b> </p>
 		          <p>http://localhost/<b>echo?wd=hello&a=world</b>
-		             ==&gt;   <b>#echo -n hello world defaultValue</b> 
+		             ==&gt;   <b>echo -n hello world defaultValue</b> 
 		          </p>
+		           <p>support output format with param : &format=[""|html|jsonp|txt]</p>
 	          </div>
           </div>
           <br/>
@@ -253,7 +256,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
              <div class='bd'>
              
           <form onsubmit='form_check();return false;'>
-          cmd:<select id='cmd' onchange='cmd_change()'>
+          cmd:<select id='cmd' onchange='cmd_change()' autocomplete="off">
             <option value=''>pls choose cmd</option>
               {{.option_cmd}}
            </select>
@@ -292,6 +295,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 	   values :=make(map[string]string)
 	   values["version"]=VERSION
 	   values["title"]=title
+	   values["intro"]=config.String("intro","")
 	   values["option_cmd"]=option_cmd
 	   
 	   jsonByte,_:=json.Marshal(msgs)

@@ -22,3 +22,6 @@ config file
    }
 }
 </pre>
+
+use /s/ as static root
+use /s/index.html as index page
