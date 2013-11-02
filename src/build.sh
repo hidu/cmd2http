@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-go build cmd2http.go
+go build -ldflags "-s -w" cmd2http.go
 zip -r res.zip res
 cat res.zip>> cmd2http
 zip -A cmd2http

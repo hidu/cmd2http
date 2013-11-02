@@ -237,25 +237,39 @@ func myHandler_res(w http.ResponseWriter, r *http.Request){
 
 func myHandler_help(w http.ResponseWriter, r *http.Request){
        str:=string(loadRes("res/tpl/help.html"));
-       msgs:=make(map[string]string)
-       option_cmd:=""
+       tabs_hd:="<div class='jw-tab'><div class='hd'><ul>\n";
+       tabs_bd:="<div class='bd'>";
        for name,_conf:=range confMap{
-           option_cmd=option_cmd+"<option value="+name+">"+name+"</option>";
-           msgs[name]=_conf.cmdStr
+           tabs_hd=tabs_hd+"<li><a>"+name+"</a></li>"
+           tabs_bd=tabs_bd+"\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this)'>\n";
+           tabs_bd=tabs_bd+"<div class='note'>command:&nbsp;&nbsp;"+_conf.cmdStr+"</div>"
+           tabs_bd=tabs_bd+"<fieldset><ul class='ul-1'>"
+              for _,_param:=range _conf.params{
+                if(_param.isValParam){
+                   tabs_bd=tabs_bd+"<li>"+_param.name+":<input type='text' name='"+_param.name+"'></li>\n";
+                     }
+                   }
+           tabs_bd=tabs_bd+"</ul><input type='submit'>&nbsp;<input type='reset'></fieldset><br/><div class='div_url'></div>"+
+            "<iframe src='about:_blank' style='border:none;width:99%;height:10px' onload='ifr_load(this)'></iframe>"+
+            "</form>\n</div>\n\n";
           }
         
+      tabs_str:=tabs_hd+"</ul></div>"+tabs_bd+"</div></div>";
+      
 	   title:=config.String("title","")
-	  // str=regexp.MustCompile(`\s+`).ReplaceAllString(str," ")
+	   
+	   reg:=regexp.MustCompile(`\s+`)
+	   tabs_str=reg.ReplaceAllString(tabs_str," ")
+	   
+	   str=reg.ReplaceAllString(str," ")
 	   
 	   tpl,_:=template.New("page").Parse(str)
 	   values :=make(map[string]string)
 	   values["version"]=VERSION
 	   values["title"]=title
+	   values["form_tabs"]=tabs_str
 	   values["intro"]=config.String("intro","")
-	   values["option_cmd"]=option_cmd
 	   
-	   jsonByte,_:=json.Marshal(msgs)
-	   values["msgs"]=string(jsonByte)
 	   
 	   w.Header().Add("c2h",VERSION)
 	   tpl.Execute(w,values)

@@ -1,31 +1,108 @@
-.cpanel {
-	background: #ffffff;
-	border-radius: 10px;
-	margin-bottom: 10px;
-	border: 1px solid #e6eaed;
-}
+@CHARSET "UTF-8";
 
-.cpanel .hd {
-	background: #e6eaed;
-	padding: 3px 0 3px 10px;
-	border-radius: 10px 10px 0 0;
-	color: #000;
-	font-weight: bold;
-}
+body{font-size: 13px;line-height: 20px}
+a{text-decoration:none}
+fieldset{border:1px solid #ccc;border-radius:10px;padding:10px}
 
-.cpanel .bd {
-	padding: 10px;
-	font-size: 13px
-}
+.r-checkbox-group label,.r-radio-group label{margin-right: 20px}
+input.r-text,textarea,input.r-search,.r-password{border: 1px solid #CCCCCC;padding: 3px 1px;margin:1px}
+input.r-text:focus,textarea:focus,.r-search:focus,.r-password:focus{border-color:#6FB1DF;box-shadow:0 0 5px #6FB1DF}
 
-h1,p {
-	margin: 5px 0 5px
-}
-.jw-tab {border: 1px solid #CCCCCC;margin-bottom: 10px;}
-.jw-tab .hd{height:28px;line-height: 28px; padding-right: 12px; text-align: right;background:#ccc}
-.jw-tab .hd ul{margin:0;padding:0}
-.jw-tab .hd li {float: left;height: 27px;line-height: 27px;padding: 0 20px;list-style:none;cursor: pointer;}
-.jw-tab .hd li.cur { background-color: #FFFFFF;font-weight: bold;border-bottom:1px solid #fff}
-.jw-tab .bd{padding:10px;}
+.cpanel {background: #ffffff;border-radius: 10px;margin-bottom: 10px;border: 1px solid #e6eaed;}
+
+.cpanel >.hd {background: #e6eaed;padding: 3px 0 3px 10px;border-radius: 10px 10px 0 0;color: #000;font-weight: bold;}
+
+.cpanel >.bd {padding: 10px;font-size: 13px}
+
+h1,p {margin: 5px 0 5px}
+
+.tb-1{border:1px solid #cccccc;table-layout:fixed;word-break:break-all;width: 100%;background:#ffffff;margin-bottom:5px}
+.tb-1 caption{text-align: center;background: #F0F4F6;font-weight: bold;padding-top: 5px;height: 25px;border:1px solid #cccccc;border-bottom:none}
+.tb-1 a{margin:0 3px 0 3px}
+.tb-1 tr th,.tb-1 tr td{padding: 3px;border:1px solid #cccccc;line-height:20px}
+.tb-1 thead tr th{font-weight:bold;text-align: center;background:#e3eaee}
+.tb-1 tbody tr th{text-align: right;background:#f0f4f6;padding-right:5px}
+.tb-1 tbody tr td{text-align: center}
+.tb-1 .thleft tr th{text-align: left;}
+.tb-1 tfoot{color:#cccccc}
+
+form .tb-1 tbody tr td{text-align: left;padding-left:10px;}
+.tb-2 td input[type=text]{width: 95%}
+.tb-1-td-left tbody tr td{text-align:left}
+
+.ul-1{list-style:none}
+.ul-1 li{list-style: none;float:left;margin-left: 5px;min-width:30px}
+.ul-1 li.cur{background: #b8cfee;color:blue}
+.ul-1 li.cur *{color:blue}
+
+.jf_loading{margin-left: 40%;display: inherit;}
+.jf_loading div{background-image: url(img/loading36.gif);display: inherit;width:128px;height:15px;}
+table tr.odd th,table tr.odd td{background: #f8f8f8}
+table tr.jf_select td,table tr.jf_select th{background: #CFE7FF;}
+
+.tab-1{height: 26px;margin-bottom:5px ;background: #4275b7;font-weight:bold;border-radius:5px 5px 0 0}
+.tab-1 li{float: left;padding:5px 10px 0 10px;text-align: center}
+.tab-1  a{color: #fff;min-width:70px;padding:5px;}
+.tab-1 li.cur a{background:#fff;color:#4275b7;display: inline-block;margin-top:-3px}
+
+.tab-2{background: url("img/dotted.png") repeat-x scroll 0 -3px transparent;height: 30px;margin-bottom: 15px;padding: 0 15px;}
+.tab-2  li{float: left;height: 25px;line-height: 25px;padding: 5px 18px 0;cursor:pointer; }
+.tab-2  li.cur{ background:white;border:1px solid #b6b6b6; border-bottom:none;border-radius:3px;font-size: 14px;font-weight: bold;height: 30px;line-height: 30px;padding: 0 18px 0 0;}
+.tab-2  li.cur span {display: inline-block;height: 30px;overflow: hidden;padding-left: 18px;width: auto;}
+.tab-2  a{color:#000;outline:none}
+
+
+.jw-tab {border: 1px solid #CCCCCC;margin-bottom: 10px;min-height:200px}
+.jw-tab >.hd{height:28px;line-height: 28px; padding-right: 12px; text-align: right;background:#E6EAED}
+.jw-tab >.hd ul{margin:0;padding:0}
+.jw-tab >.hd li {float: left;height: 27px;line-height: 27px;padding: 0 15px;list-style:none;cursor: pointer;border-right:1px solid white}
+.jw-tab >.hd li.cur { background-color: #FFFFFF;font-weight: bold;border-bottom:2px solid #fff}
+.jw-tab >.bd{padding:10px;}
+.emsg{color: red;font-weight: bold;}
 
 .jw-msg{position: fixed;bottom: 40px;left:25%;text-align: center;width: 50%;background-color:#000;filter: alpha(opacity=80);opacity: 0.8;color:#fff;z-index:999999;padding:10px;font-size:20px;border-radius:10px}
+
+.icon-add,.icon{background:url('img/icon0.gif') no-repeat;background-position:0 -2px; padding-left:16px;cursor: pointer;min-height:20px;}
+.icon-close,.icon-del{background-position:0 -86px}
+.icon-save{background-position:0 -622px}
+.icon-edit{background-position:0 -1042px}
+.icon-fold{background-position:0 -1180px}
+.icon-expand{background-position:0 -1220px}
+.icon-search{background-position:0 -1092px}
+.icon-refresh{background-position:0 -286px}
+.icon-ok{background-position:0 -260px}
+.icon-no{background-position:0 -235px}
+.icon-view{background-position:0 -664px}
+.icon-print{background-position:0 -130px}
+.icon-add1{background-position:0 -1144px}
+.icon-choose{background: url('img/icon-choose.png')}
+.icon-money{background-position:0 -1393px}
+.icon-home{background-position:0 -1294px}
+.icon-mail{background-position:0 -1355px}
+.icon-opt{background-position:0 -1373px}
+.icon-phone{background-position:0 -882px}
+
+
+.todo{padding:10px;border-radius:10px;border:1px solid #999900;margin: 10px;background:#ccffcc}
+.todo h3{font-weight: bold;margin:-10px 0 5px -5px;font-size:14px}
+.todo ul{padding-left:30px}
+.todo li{list-style:decimal;}
+
+.note{padding:5px;padding-left:26px;margin:5px 0 5px;background:url('img/i.png') no-repeat 3px 3px #cedff3;border-radius:5px;font-size:12px;line-height:20px }
+.note ul,.ul-num{padding-left:20px}
+.note ul li,.ul-num li{list-style:decimal}
+
+.panel-1{background: #efefef;padding:10px;margin-bottom: 10px}
+.panel-1-hd{font-weight: bold;margin-bottom: 10px}
+.panel-1-bd{background: #fff;padding:10px}
+
+
+.error,.notice,.success {margin-bottom:1em;border:2px solid #ddd;padding:.8em;}
+.error {background:#FBE3E4;color:#D12F19;border-color:#FBC2C4;}
+.notice {background:#FFF6BF;color:#817134;border-color:#FFD324;}
+.success {background:#E6EFC2;color:#529214;border-color:#C6D880;}
+.error a {color:#D12F19;}
+.notice a {color:#817134;}
+.success a {color:#529214;}
+
+form table tbody th{text-align: right}
