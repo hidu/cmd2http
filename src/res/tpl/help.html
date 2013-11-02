@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+<meta name="author" content="duwei">
+<title>{{.title}} cmd2http {{.version}}</title>
+<link  type="text/css" rel="stylesheet" href="/res/css/style.css" >
+<script src="/res/js/jquery.js"></script>
+<script src="/res/js/jw.js"></script>
+<script>
+     function callback(data){
+          var doc=window.frames[0].document;
+          doc.open();
+			 doc.close();
+		    doc.body.innerHTML="<pre>"+data.data+"</pre>";
+         }
+    function form_check(){
+         var cmd=$('#cmd').val();
+         if(!cmd){
+              jw.msg("pls choose cmd");
+              return false;
+              }
+          var _param=$('#cmd').val()+"?"+$('#params').val();
+          var _url="http://"+location.host+"/"+_param;
+          $('#div_url').html("<a href='"+_url+"' target='_blank'>"+_url+"</a>");
+          $('#panel_result').show();
+          $('#result').attr("src",_param);
+       }
+    function cmd_change(){
+          $('#msg').html("<br/>command defined : <b>"+(msg[$('#cmd').value]||"")+"</b>");
+       }
+    var msg={{.msgs}};
+    function ifr_load(){
+       $("#result").height=50;
+ 		$("#result").height=window.frames[0].document.body.scrollHeight+40;
+       }
+    </script>
+</head>
+<body>
+	<h1>
+		{{.title}}<font style='font-size: 16px'>&nbsp;cmd2http</font>
+	</h1>
+	<div style='margin-bottom: 5px'>{{.intro}}</div>
+	<div class="cpanel">
+		<div class="hd">demo</div>
+		<div class='bd'>
+			<p>
+				defined cmd: <b>echo -n $wd $a $b|defaultValue</b>
+			</p>
+			<p>
+				http://localhost/<b>echo?wd=hello&a=world</b> ==&gt; <b>echo -n
+					hello world defaultValue</b>
+			</p>
+			<p>support output format with param : &format=[""|html|jsonp|txt]</p>
+		</div>
+	</div>
+	<br />
+	<div class="cpanel">
+		<div class="hd">quick cmd</div>
+		<div class='bd'>
+
+			<form onsubmit='form_check();return false;'>
+				cmd:<select id='cmd' onchange='cmd_change()' autocomplete="off">
+					<option value=''>pls choose cmd</option> 
+					  {{.option_cmd}}
+				   </select> 
+				params:<input type='text' id='params' name='params' style="width: 500px"> 
+				<input type='submit'>
+				<div id='msg'></div>
+			</form>
+			<br />
+		</div>
+	</div>
+	<div class="cpanel" style="display: none" id='panel_result'>
+		<div class="hd">
+			result &nbsp;<span id="div_url"></span>
+		</div>
+		<div class='bd'>
+			<iframe id='result' name="result" src="about:_blank" style="border: none; width: 99%" onload="ifr_load()"></iframe>
+		</div>
+	</div>
+</body>
+</html>

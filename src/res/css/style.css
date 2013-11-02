@@ -1,0 +1,31 @@
+.cpanel {
+	background: #ffffff;
+	border-radius: 10px;
+	margin-bottom: 10px;
+	border: 1px solid #e6eaed;
+}
+
+.cpanel .hd {
+	background: #e6eaed;
+	padding: 3px 0 3px 10px;
+	border-radius: 10px 10px 0 0;
+	color: #000;
+	font-weight: bold;
+}
+
+.cpanel .bd {
+	padding: 10px;
+	font-size: 13px
+}
+
+h1,p {
+	margin: 5px 0 5px
+}
+.jw-tab {border: 1px solid #CCCCCC;margin-bottom: 10px;}
+.jw-tab .hd{height:28px;line-height: 28px; padding-right: 12px; text-align: right;background:#ccc}
+.jw-tab .hd ul{margin:0;padding:0}
+.jw-tab .hd li {float: left;height: 27px;line-height: 27px;padding: 0 20px;list-style:none;cursor: pointer;}
+.jw-tab .hd li.cur { background-color: #FFFFFF;font-weight: bold;border-bottom:1px solid #fff}
+.jw-tab .bd{padding:10px;}
+
+.jw-msg{position: fixed;bottom: 40px;left:25%;text-align: center;width: 50%;background-color:#000;filter: alpha(opacity=80);opacity: 0.8;color:#fff;z-index:999999;padding:10px;font-size:20px;border-radius:10px}

@@ -10,11 +10,15 @@ import (
 	 "bytes"
 	 "time"
 	 "strings"
+	 "io/ioutil"
 	 "regexp"
 	 "encoding/json"
 	 "os/exec"
+	 "mime"
+	 "path/filepath"
 	 "text/template"
 	 jsonConf "github.com/daviddengcn/go-ljson-conf"
+	  "github.com/cookieo9/resources-go/v2/resources"
    )
 var configPath=flag.String("conf","./cmd2http.conf","config file")
 
@@ -49,6 +53,21 @@ func main(){
     loadConfig()
     
     startHttpServer()
+}
+
+func startHttpServer(){
+//   http.ReadTimeout=60 * time.Second
+   
+   http.Handle("/s/",http.FileServer(http.Dir("./")))
+   http.HandleFunc("/res/",myHandler_res)
+   http.HandleFunc("/",myHandler_root)
+   http.HandleFunc("/help",myHandler_help)
+   
+   addr:=fmt.Sprintf(":%d",port)
+   log.Println("listen at",addr)
+   fmt.Println("listen at",addr)
+   
+   http.ListenAndServe(addr,nil)
 }
 
 func (p *param)ToString() string{
@@ -108,19 +127,22 @@ func loadConfig(){
 	log.Println("load conf [",*configPath,"] finish [ok]")
 }
 
-func startHttpServer(){
-//   http.ReadTimeout=60 * time.Second
-   
-   http.Handle("/s/",http.FileServer(http.Dir("./")))
-   http.HandleFunc("/",myHandler_root)
-   http.HandleFunc("/help",myHandler_help)
-   
-   addr:=fmt.Sprintf(":%d",port)
-   log.Println("listen at",addr)
-   fmt.Println("listen at",addr)
-   
-   http.ListenAndServe(addr,nil)
+func loadRes(path string) []byte{
+    path=strings.TrimLeft(path,"/")
+    res,err:=resources.Find(path)
+    if(err!=nil){
+      log.Println("load res[",path,"] failed",err.Error())
+      return []byte{};
+     }
+     r,_:=res.Open()
+     bf,err:=ioutil.ReadAll(r)
+     if(err!=nil){
+        log.Println("read res[",path,"] failed",err.Error())
+      }
+     return bf
 }
+
+
 
 func Command(name string, args []string) *exec.Cmd {
 	aname, err := exec.LookPath(name)
@@ -146,7 +168,6 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	      myHandler_help(w,r)
 	      return;
 	   }
-	   
 	   
 	  logStr:=r.RemoteAddr+" req:"+r.RequestURI
 	  defer func(){
@@ -190,7 +211,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  logStr=logStr+fmt.Sprintf(" resLen:%d time_use:%v",len(outStr),time.Now().Sub(startTime))
 	  
 	  if(format=="" || format=="html"){
-	    fmt.Fprintf(w,fmt.Sprintf(str,conf.charset,conf.name,outStr))
+	    fmt.Fprintf(w,str,conf.charset,conf.name,outStr)
 	   }else if(format=="jsonp"){
 	       cb:=r.FormValue("cb")
 	       if(cb==""){
@@ -201,100 +222,21 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	       jsonByte,_:=json.Marshal(m)
 	       fmt.Fprintf(w,fmt.Sprintf(`%s(%s)`,cb,string(jsonByte)))
 	   }else{ 
-	    fmt.Fprintf(w,outStr)
+	    w.Write([]byte(outStr))
 	   }
 }
 
 
+func myHandler_res(w http.ResponseWriter, r *http.Request){
+   mimeType:= mime.TypeByExtension(filepath.Ext(r.URL.Path))
+   if(mimeType!=""){
+       w.Header().Set("Content-Type",mimeType)
+     }
+    w.Write(loadRes(r.URL.Path))
+}
+
 func myHandler_help(w http.ResponseWriter, r *http.Request){
-   str:=`<!DOCTYPE html><html>
-         <head>
-         <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-         <title>{{.title}} cmd2http {{.version}}</title>
-         <style>
-				.cpanel{background:#ffffff;border-radius:10px;margin-bottom: 10px;border:1px solid #e6eaed;}
-				.cpanel .hd{background:#e6eaed;padding: 3px 0 3px 10px;border-radius:10px 10px 0 0;color:#000;font-weight: bold;}
-				.cpanel .bd{padding: 10px;font-size:13px}
-				h1,p{margin:5px 0 5px}
-         </style>
-          <script>
-            function $(id){
-              return document.getElementById(id);
-               }
-           function jsonp(url){
-           var script = document.createElement('script');
-               script.setAttribute('src', url+"&format=jsonp&cb=callback");
-               document.getElementsByTagName('head')[0].appendChild(script); 
-               }
-               
-           function callback(data){
-                var doc=window.frames[0].document;
-                doc.open();
-					 doc.close();
-					 doc.body.innerHTML="<pre>"+data.data+"</pre>";
-               }
-          function form_check(){
-               var cmd=$('cmd').value;
-               if(!cmd){
-                    alert("pls choose cmd");
-                    return false;
-                    }
-                var _param=$('cmd').value+"?"+$('params').value;
-                var _url="http://"+location.host+"/"+_param;
-                $('div_url').innerHTML="<a href='"+_url+"' target='_blank'>"+_url+"</a>";
-                $('panel_result').style.display="block";
-                $('result').src=_param;
-               /* jsonp(_param)*/
-             }
-          function cmd_change(){
-                $('msg').innerHTML="<br/>command defined : <b>"+(msg[$('cmd').value]||"")+"</b>";
-             }
-          </script>
-        </head><body>
-          <h1>{{.title}}<font style='font-size:16px'>&nbsp;cmd2http</font></h1>
-          <div style='margin-bottom:5px'>{{.intro}}</div>
-          <div class="cpanel">
-             <div class="hd">demo</div>
-             <div class='bd'>
-		          <p>defined cmd: <b>echo -n $wd $a $b|defaultValue</b> </p>
-		          <p>http://localhost/<b>echo?wd=hello&a=world</b>
-		             ==&gt;   <b>echo -n hello world defaultValue</b> 
-		          </p>
-		           <p>support output format with param : &format=[""|html|jsonp|txt]</p>
-	          </div>
-          </div>
-          <br/>
-           <div class="cpanel">
-             <div class="hd">quick cmd</div>
-             <div class='bd'>
-             
-          <form onsubmit='form_check();return false;'>
-          cmd:<select id='cmd' onchange='cmd_change()' autocomplete="off">
-            <option value=''>pls choose cmd</option>
-              {{.option_cmd}}
-           </select>
-               params:<input type='text' id='params' name='params' style="width:500px">
-               <input type='submit'>
-             <div id='msg'></div>
-          </form>
-          <br/>
-          </div>
-          </div>
-          <script> 
-          var msg={{.msgs}};
-	         function ifr_load(){
-	            $("result").height=50;
-				   $("result").height=window.frames[0].document.body.scrollHeight+40;
-	            }
-          </script>
-           <div class="cpanel" style="display:none" id='panel_result'>
-           <div class="hd">result &nbsp;<span id="div_url"></span></div>
-             <div class='bd'>
-               <iframe id='result' name="result" src="about:_blank" style="border:none;width:99%" onload="ifr_load()" ></iframe>
-            </div>
-          </div>
-          </body></html>`;
-        
+       str:=string(loadRes("res/tpl/help.html"));
        msgs:=make(map[string]string)
        option_cmd:=""
        for name,_conf:=range confMap{
@@ -303,7 +245,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
           }
         
 	   title:=config.String("title","")
-	   str=regexp.MustCompile(`\s+`).ReplaceAllString(str," ")
+	  // str=regexp.MustCompile(`\s+`).ReplaceAllString(str," ")
 	   
 	   tpl,_:=template.New("page").Parse(str)
 	   values :=make(map[string]string)
