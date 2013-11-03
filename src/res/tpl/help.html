@@ -8,7 +8,11 @@
 <script src="/res/js/jquery.js"></script>
 <script src="/res/js/jw.js"></script>
 <script>
-    function form_check(form){
+    function form_check(form,name){
+    	    var fn=window["form_"+name]||"";
+    	    if(fn && $.isFunction(fn) && false===fn.call(form)){
+    	    		return false
+    	     }
     	    var f=$(form);
           var _url=form.action+"?"+f.serialize();
           f.find(".div_url").html("<a href='"+_url+"' target='_blank'>"+_url+"</a>").addClass("panel-1");
