@@ -217,6 +217,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  logStr=logStr+fmt.Sprintf(" resLen:%d time_use:%v",len(outStr),time.Now().Sub(startTime))
 	  
 	  if(format=="" || format=="html"){
+	       w.Header().Set("Content-Type","text/html;charset="+conf.charset)
 	    fmt.Fprintf(w,str,conf.charset,conf.name,outStr)
 	   }else if(format=="jsonp"){
 	       cb:=r.FormValue("cb")
