@@ -247,7 +247,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
        tabs_bd:="<div class='bd'>";
        for name,_conf:=range confMap{
            tabs_hd=tabs_hd+"<li><a>"+name+"</a></li>"
-           tabs_bd=tabs_bd+"\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")'>\n";
+           tabs_bd=tabs_bd+"\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
            tabs_bd=tabs_bd+"<div class='note'><div>command :&nbsp;&nbsp;"+_conf.cmdStr+"</div>"
            if(_conf.intro!=""){
              tabs_bd=tabs_bd+"<div>intro :&nbsp;&nbsp;"+_conf.intro+"</div>"

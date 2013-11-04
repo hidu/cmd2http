@@ -26,6 +26,7 @@ config file
 </pre>
 
 use /s/ as static root
+
 use /s/index.html as index page
 
 usr /s/my.js to control the help page form
