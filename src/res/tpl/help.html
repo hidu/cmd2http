@@ -10,8 +10,10 @@
 <script>
     function form_check(form,name){
     	    var fn=window["form_"+name]||"";
-    	    if(fn && $.isFunction(fn) && false===fn.call(form)){
-    	    		return false
+    	    if(fn && $.isFunction(fn) ){
+	    	    	if(false===fn.call(form)){
+	    	    		return false
+	    	    	}
     	     }
     	    var f=$(form);
           var _url=form.action+"?"+f.serialize();

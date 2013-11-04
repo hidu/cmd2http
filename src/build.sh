@@ -5,5 +5,5 @@ go build -ldflags "-s -w" cmd2http.go
 zip -r res.zip res
 cat res.zip>> cmd2http
 zip -A cmd2http
-mv cmd2http ../bin/
+mv cmd2http ../dest/
 rm res.zip
