@@ -24,8 +24,7 @@ import (
 var configPath=flag.String("conf","./cmd2http.conf","config file")
 
 var port int
-
-const VERSION="20131031 1.0"
+var version string
 
 type param struct{
   name string
@@ -49,11 +48,11 @@ var config *jsonConf.Conf
 
 func main(){
    flag.Parse()
+//    log.SetFlags(log.LstdFlags|log.Lshortfile)
+    loadConfig()
    logFile,_:=os.OpenFile("./cmd2http.log",os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
    defer logFile.Close()
    log.SetOutput(logFile)
-//    log.SetFlags(log.LstdFlags|log.Lshortfile)
-    loadConfig()
     
     startHttpServer()
 }
@@ -77,9 +76,20 @@ func (p *param)ToString() string{
     return fmt.Sprintf("name:%s,default:%s,isValParam:%x",p.name,p.defaultValue,p.isValParam);
 }
 func loadConfig(){
+   version=getVersion()
+
    log.Println("start load conf [",*configPath,"]")
-   var err error
    log.Println("use conf:",*configPath)
+   
+   pathAbs,_:=filepath.Abs(*configPath)
+   
+   _,_err:= os.Open(pathAbs)
+   if _err != nil {
+        panic(_err.Error())
+    }
+   os.Chdir(filepath.Dir(*configPath))
+    
+   var err error
    config, err= jsonConf.Load(*configPath)
 	if err != nil {
 	  log.Println(err.Error(),config)
@@ -201,6 +211,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	   
 	  logStr:=r.RemoteAddr+" req:"+r.RequestURI+" "
 	  defer func(){
+	       logStr+=fmt.Sprintf(" time_use:%v",time.Now().Sub(startTime))
 	       log.Println(logStr)
 	   }()
 	  
@@ -226,27 +237,43 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  cmd := Command(conf.cmd,args)
   	  var out bytes.Buffer
 		cmd.Stdout = &out
-	  done := make(chan error)
-	  err:=cmd.Start()
+	   err:=cmd.Start()
+	 
+
 	  if(err!=nil){
-	     logStr=logStr+err.Error()
+	     logStr+=err.Error()
 	     fmt.Fprintf(w,err.Error())
 	     return;
 	   }
-	  
+   	done := make(chan error)
 		go func() {
 		    done <- cmd.Wait()
 		}()
 		
+		cc := w.(http.CloseNotifier).CloseNotify()
+		
+		isResonseOk:=true
+		
+		killCmd:=func(msg string){
+			  if err := cmd.Process.Kill(); err != nil {
+	            log.Println("failed to kill: ", err)
+	           }
+	        logStr+="[killed:"+msg+"]"
+//	        log.Println(logStr)
+	        isResonseOk=false
+		}
+		
 		select {
+		    case <-cc:
+		         killCmd("client close")
 		    case <-time.After(time.Duration(conf.timeout) * time.Second):
-		        if err := cmd.Process.Kill(); err != nil {
-		            log.Fatal("failed to kill: ", err)
-		           }
-		        <-done // allow goroutine to exit
-		        logStr+="timeout process killed"
-		    case err := <-done:
-		        logStr+="process done with error = "+err.Error()
+               killCmd("timeout")
+          case <-done:
+                  
+		}
+	  
+		if(!isResonseOk){
+		    return;
 		}
 		
 	  format:=r.FormValue("format")
@@ -255,7 +282,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	         <title>%s cmd2http</title></head><body><pre>%s</pre></body></html>`
 	         
 	  outStr:=out.String()
-	  logStr=logStr+fmt.Sprintf(" resLen:%d time_use:%v",len(outStr),time.Now().Sub(startTime))
+	  logStr+=fmt.Sprintf("resLen:%d ",len(outStr))
 	  
 	  if(format=="" || format=="html"){
 	       w.Header().Set("Content-Type","text/html;charset="+conf.charset)
@@ -302,7 +329,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
                          }
-                   tabs_bd=tabs_bd+"<li>"+_param.name+":<input type='text' name='"+_param.name+"' "+placeholder+"></li>\n";
+                   tabs_bd=tabs_bd+"<li>"+_param.name+":<input class='r-text' type='text' name='"+_param.name+"' "+placeholder+"></li>\n";
                      }
                    }
            tabs_bd=tabs_bd+"</ul><input type='submit'>&nbsp;<input type='reset'></fieldset><br/><div class='div_url'></div>"+
@@ -325,12 +352,16 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 	   
 	   tpl,_:=template.New("page").Parse(str)
 	   values :=make(map[string]string)
-	   values["version"]=VERSION
+	   values["version"]=version
 	   values["title"]=title
 	   values["form_tabs"]=tabs_str
 	   values["intro"]=config.String("intro","")
 	   
 	   
-	   w.Header().Add("c2h",VERSION)
+	   w.Header().Add("c2h",version)
 	   tpl.Execute(w,values)
+}
+
+func getVersion() string{
+   return string(loadRes("res/version"));
 }
