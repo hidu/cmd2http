@@ -15,6 +15,7 @@ import (
 	 "encoding/json"
 	 "os/exec"
 	 "mime"
+	 "strconv"
 	 "path/filepath"
 	 "text/template"
 	 jsonConf "github.com/daviddengcn/go-ljson-conf"
@@ -39,6 +40,7 @@ type Conf struct{
    charset string
    params []*param
    intro string
+   timeout int
 }
 
 var confMap map[string]*Conf
@@ -85,6 +87,11 @@ func loadConfig(){
 	}
 	port=config.Int("port",8310)
 	
+	timeout:=config.Int("timeout",30)
+	if(timeout<1){
+	  timeout=1
+	}
+	
 	confMap=make(map[string]*Conf)
 	
 	cmds:=config.Object("cmds",make(map[string]interface{}))
@@ -93,12 +100,29 @@ func loadConfig(){
 	   _conf:=v.(map[string]interface{})
 	   conf:=new(Conf)
 	   conf.name=k
+	   conf.timeout=timeout
 	   conf.charset="utf-8"
 	  if _charset,_has:=_conf["charset"];_has { 
 	      conf.charset=_charset.(string)
 	    }
 	   if _intro,_has:=_conf["intro"];_has{
 	     conf.intro=_intro.(string)
+	   }
+	   if _timeout,_has:=_conf["timeout"];_has{
+	       t:=0;
+	        switch v:= _timeout.(type){
+	            case string:
+	                i, err := strconv.ParseInt(v, 0, 0)
+	                if err == nil {
+	                     t=int(i)
+	                     }
+                case float64:
+                      t=int(_timeout.(float64))
+	          }
+	          
+	     if(t>0){
+   	      conf.timeout=t
+	       }
 	   }
 	   conf.cmdStr,_=_conf["cmd"].(string)
 	   conf.cmdStr=strings.TrimSpace(conf.cmdStr)
@@ -175,14 +199,14 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	      return;
 	   }
 	   
-	  logStr:=r.RemoteAddr+" req:"+r.RequestURI
+	  logStr:=r.RemoteAddr+" req:"+r.RequestURI+" "
 	  defer func(){
 	       log.Println(logStr)
 	   }()
 	  
 	  conf,has:=confMap[path]
 	  if(!has) {
-	     logStr=logStr+" not support cmd"
+	     logStr=logStr+"not support cmd"
 	     fmt.Fprintf(w,"not support")
 	     return;
 	  }
@@ -200,14 +224,31 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	      args[i+1]=val
 	  }
 	  cmd := Command(conf.cmd,args)
-	  var out bytes.Buffer
+  	  var out bytes.Buffer
 		cmd.Stdout = &out
-	  err := cmd.Run()
-	  if err != nil {
-	    log.Println(err)
-	    fmt.Fprintf(w,err.Error())
-	    return;
-	  }
+	  done := make(chan error)
+	  err:=cmd.Start()
+	  if(err!=nil){
+	     logStr=logStr+err.Error()
+	     fmt.Fprintf(w,err.Error())
+	     return;
+	   }
+	  
+		go func() {
+		    done <- cmd.Wait()
+		}()
+		
+		select {
+		    case <-time.After(time.Duration(conf.timeout) * time.Second):
+		        if err := cmd.Process.Kill(); err != nil {
+		            log.Fatal("failed to kill: ", err)
+		           }
+		        <-done // allow goroutine to exit
+		        logStr+="timeout process killed"
+		    case err := <-done:
+		        logStr+="process done with error = "+err.Error()
+		}
+		
 	  format:=r.FormValue("format")
 	  str:=`<!DOCTYPE html><html><head>
 	         <meta http-equiv='Content-Type' content='text/html; charset=%s' />

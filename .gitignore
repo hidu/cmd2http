@@ -24,3 +24,5 @@ _testmain.go
 *.exe
 /bin
 *.log
+dest/test/
+
