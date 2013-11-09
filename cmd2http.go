@@ -315,11 +315,12 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
        tabs_hd:="<div class='jw-tab'><div class='hd'><ul>\n";
        tabs_bd:="<div class='bd'>";
        for name,_conf:=range confMap{
-           tabs_hd=tabs_hd+"<li><a>"+name+"</a></li>"
-           tabs_bd=tabs_bd+"\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
-           tabs_bd=tabs_bd+"<div class='note'><div>command :&nbsp;&nbsp;"+_conf.cmdStr+"</div>"
+           tabs_hd+="<li><a>"+name+"</a></li>"
+           tabs_bd+="\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
+           tabs_bd+="<div class='note'><div><b>command</b> :&nbsp;[&nbsp;"+_conf.cmdStr+
+           "&nbsp;]&nbsp;<b>timeout</b> :&nbsp;"+fmt.Sprintf("%d",_conf.timeout)+"s</div>"
            if(_conf.intro!=""){
-             tabs_bd=tabs_bd+"<div>intro :&nbsp;&nbsp;"+_conf.intro+"</div>"
+             tabs_bd=tabs_bd+"<div><b>intro</b> :&nbsp;&nbsp;"+_conf.intro+"</div>"
               }
            tabs_bd=tabs_bd+"</div>";
            tabs_bd=tabs_bd+"<fieldset><ul class='ul-1'>"
@@ -329,7 +330,8 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
                          }
-                   tabs_bd=tabs_bd+"<li>"+_param.name+":<input class='r-text' type='text' name='"+_param.name+"' "+placeholder+"></li>\n";
+                   tabs_bd=tabs_bd+"<li>"+_param.name+
+                   ":<input class='r-text p_"+_param.name+"' type='text' name='"+_param.name+"' "+placeholder+"></li>\n";
                      }
                    }
            tabs_bd=tabs_bd+"</ul><input type='submit'>&nbsp;<input type='reset'></fieldset><br/><div class='div_url'></div>"+
@@ -338,9 +340,12 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
           }
         
       tabs_str:=tabs_hd+"</ul></div>"+tabs_bd+"</div></div>";
+      if(isFileExists("./s/my.css")){
+        tabs_str+="<link  type='text/css' rel='stylesheet' href='/s/my.css'>";
+        }
       
       if(isFileExists("./s/my.js")){
-        tabs_str=tabs_str+"<script src='/s/my.js'></script>";
+        tabs_str+="<script src='/s/my.js'></script>";
         }
       
 	   title:=config.String("title","")

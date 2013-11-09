@@ -4,30 +4,38 @@
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 <meta name="author" content="duwei">
 <title>{{.title}} cmd2http {{.version}}</title>
-<link  type="text/css" rel="stylesheet" href="/res/css/style.css" >
+<link type="text/css" rel="stylesheet" href="/res/css/style.css">
 <script src="/res/js/jquery.js"></script>
 <script src="/res/js/jw.js"></script>
 <script>
-    function form_check(form,name){
-    	    var fn=window["form_"+name]||"";
-    	    if(fn && $.isFunction(fn) ){
-	    	    	if(false===fn.call(form)){
-	    	    		return false
-	    	    	}
-    	     }
-    	    var f=$(form);
-          var _url=form.action+"?"+f.serialize();
-          f.find(".div_url").html("<a href='"+_url+"' target='_blank'>"+_url+"</a>").addClass("panel-1");
-          f.find("iframe").attr("src",_url);
-          return false;
-       }
-    function ifr_load(ifr){
-       $(ifr).height(50).height($(ifr).contents().find("body").outerHeight()+50);
-       }
-    </script>
-    <style>
-    .r-text{width:200px}
-    </style>
+	function findByName(form,name){
+		return $(form).find("[name="+name+"]");
+	};
+	function form_check(form, name) {
+		var fn = window["form_" + name] || "";
+		if (fn && $.isFunction(fn)) {
+			if (false === fn.call(form)) {
+				return false
+			}
+		}
+		var f = $(form);
+		var _url = form.action + "?" + f.serialize();
+		f.find(".div_url").html("<a href='"+_url+"' target='_blank'>" + _url + "</a><span class='right'></span>").addClass("panel-1");
+		f.find("iframe").attr("src", _url).data("start",(new Date()).getTime());
+		return false;
+	}
+	function ifr_load(ifr) {
+		var start=$(ifr).data("start");
+		var used=(new Date()).getTime()-start;
+		$(ifr).height(50).height($(ifr).contents().find("body").outerHeight() + 50);
+		$(ifr).parent("form").find("div.div_url span").html("used : <b>"+(used/1000).toFixed(2)+"</b>s");
+	}
+</script>
+<style>
+.r-text {
+	width: 200px
+}
+</style>
 </head>
 <body>
 	<h1>

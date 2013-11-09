@@ -11,12 +11,14 @@ config file
 <pre>    
 {
    port:8310,
-   title:"super"
-   intro:"intro msg"
+   title:"default title"
+   intro:"intro info"
+   timeout:30
    cmds:{
       pwd:{
           cmd:"pwd",
           intro:"cmd intor",
+          timeout:10
        },
       echo:{
          cmd:"echo -n $wd|你好 $a $b"
@@ -29,13 +31,15 @@ use /s/ as static root
 
 use /s/index.html as index page
 
-usr /s/my.js to control the help page form
+you can use /s/my.css and /s/my.js to control the help page form
+
 
 <pre>
 // /s/my.js example
 
-function form_echo{
-    if(1>2){//some condtion
+function form_echo(){
+    var input_n=findByName(this,'n');
+    if(input_n.val()<10){
        jw.msg("param wrong!")
        return false;
       }
