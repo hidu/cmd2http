@@ -39,7 +39,7 @@ you can use /s/my.css and /s/my.js to control the help page form
 
 function form_echo(){
     var input_n=findByName(this,'n');
-    if(input_n.val()<10){
+    if(input_n.val()&lt;10){
        jw.msg("param wrong!")
        return false;
       }
