@@ -15,7 +15,7 @@ import (
 	 "encoding/json"
 	 "os/exec"
 	 "mime"
-	 "strconv"
+	 "html"
 	 "path/filepath"
 	 "text/template"
 	 jsonConf "github.com/daviddengcn/go-ljson-conf"
@@ -40,11 +40,16 @@ type Conf struct{
    params []*param
    intro string
    timeout int
+   charset_list []string
 }
 
 var confMap map[string]*Conf
 
 var config *jsonConf.Conf
+
+var charset_list []string
+
+var charset_default string
 
 func main(){
    flag.Parse()
@@ -69,12 +74,25 @@ func startHttpServer(){
    log.Println("listen at",addr)
    fmt.Println("listen at",addr)
    
-   http.ListenAndServe(addr,nil)
+   err:=http.ListenAndServe(addr,nil)
+   if(err!=nil){
+       log.Println(err.Error())
+     }
 }
 
 func (p *param)ToString() string{
     return fmt.Sprintf("name:%s,default:%s,isValParam:%x",p.name,p.defaultValue,p.isValParam);
 }
+
+func in_array(item string,arr []string) bool{
+  for _,a:=range arr{
+     if(a==item){
+        return true
+       }
+   }
+ return false
+}
+
 func loadConfig(){
    version=getVersion()
 
@@ -97,6 +115,14 @@ func loadConfig(){
 	}
 	port=config.Int("port",8310)
 	
+	charset_list=config.StringList("charset_list",[]string{})
+	
+	charset_default=config.String("charset","utf-8");
+	
+	if(!in_array(charset_default,charset_list)){
+	   charset_list=append(charset_list,charset_default);   
+	}
+	
 	timeout:=config.Int("timeout",30)
 	if(timeout<1){
 	  timeout=1
@@ -106,35 +132,26 @@ func loadConfig(){
 	
 	cmds:=config.Object("cmds",make(map[string]interface{}))
 	
-	for k,v:=range cmds{
-	   _conf:=v.(map[string]interface{})
+	for k,_:=range cmds{
+	   conf_path_pre:="cmds."+k+"."
+	   
 	   conf:=new(Conf)
 	   conf.name=k
 	   conf.timeout=timeout
-	   conf.charset="utf-8"
-	  if _charset,_has:=_conf["charset"];_has { 
-	      conf.charset=_charset.(string)
-	    }
-	   if _intro,_has:=_conf["intro"];_has{
-	     conf.intro=_intro.(string)
-	   }
-	   if _timeout,_has:=_conf["timeout"];_has{
-	       t:=0;
-	        switch v:= _timeout.(type){
-	            case string:
-	                i, err := strconv.ParseInt(v, 0, 0)
-	                if err == nil {
-	                     t=int(i)
-	                     }
-                case float64:
-                      t=int(_timeout.(float64))
-	          }
-	          
-	     if(t>0){
-   	      conf.timeout=t
-	       }
-	   }
-	   conf.cmdStr,_=_conf["cmd"].(string)
+	   
+	   conf.charset=config.String(conf_path_pre+"charset",charset_default)
+      conf.intro=config.String(conf_path_pre+"intro","")
+	   
+	   conf.charset_list=config.StringList(conf_path_pre+"charset_list",charset_list)
+	   
+	    if(!in_array(conf.charset,conf.charset_list)){
+			   conf.charset_list=append(conf.charset_list,conf.charset);   
+		}
+	   
+	   conf.timeout=config.Int(conf_path_pre+"timeout",timeout)
+
+	   conf.cmdStr=config.String(conf_path_pre+"cmd","")
+	   
 	   conf.cmdStr=strings.TrimSpace(conf.cmdStr)
 	   conf.params=make([]*param,0,10)
 	   
@@ -268,11 +285,13 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 		         killCmd("client close")
 		    case <-time.After(time.Duration(conf.timeout) * time.Second):
                killCmd("timeout")
+//               w.WriteHeader();
           case <-done:
                   
 		}
 	  
 		if(!isResonseOk){
+		    
 		    return;
 		}
 		
@@ -284,19 +303,30 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  outStr:=out.String()
 	  logStr+=fmt.Sprintf("resLen:%d ",len(outStr))
 	  
+	  charset:=r.FormValue("charset")
+	  if(charset==""){
+	     charset=conf.charset
+	  }
+	  
 	  if(format=="" || format=="html"){
-	       w.Header().Set("Content-Type","text/html;charset="+conf.charset)
-	    fmt.Fprintf(w,str,conf.charset,conf.name,outStr)
+	       w.Header().Set("Content-Type","text/html;charset="+charset)
+	       if(format==""){
+   	       fmt.Fprintf(w,str,conf.charset,conf.name,html.EscapeString(outStr))
+	       }else{
+	          w.Write([]byte(outStr))
+	         }
 	   }else if(format=="jsonp"){
+          w.Header().Set("Content-Type","text/javascript;charset="+charset)
 	       cb:=r.FormValue("cb")
 	       if(cb==""){
-	           cb="cb"
+	           cb="jsonp_form_"+path
 	        }
 	       m:=make(map[string]string)
 	       m["data"]=outStr
 	       jsonByte,_:=json.Marshal(m)
 	       fmt.Fprintf(w,fmt.Sprintf(`%s(%s)`,cb,string(jsonByte)))
 	   }else{ 
+       w.Header().Set("Content-Type","text/plain;charset="+charset)
 	    w.Write([]byte(outStr))
 	   }
 }
@@ -330,13 +360,29 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
                          }
-                   tabs_bd=tabs_bd+"<li>"+_param.name+
+                   tabs_bd+="<li>"+_param.name+
                    ":<input class='r-text p_"+_param.name+"' type='text' name='"+_param.name+"' "+placeholder+"></li>\n";
                      }
                    }
-           tabs_bd=tabs_bd+"</ul><input type='submit'>&nbsp;<input type='reset'></fieldset><br/><div class='div_url'></div>"+
-            "<iframe src='about:_blank' style='border:none;width:99%;height:10px' onload='ifr_load(this)'></iframe>"+
-            "</form>\n</div>\n\n";
+           tabs_bd+="<li>format:<select name='format'><option value=''>default</option><option value='html'>html</option><option value='plain'>plain</option><option value='jsonp'>jsonp</option></select></li>\n";
+           tabs_bd+="<li>charset:<select name='charset'>"
+           for _,_charset:=range _conf.charset_list{
+                   _selected:="";
+                   if(_charset==_conf.charset){
+		                   _selected="selected=selected";
+		                  }
+               tabs_bd+="<option value='"+_charset+"' "+_selected+">"+_charset+"</option>"
+              }
+           tabs_bd+="</select></li>"
+           
+           tabs_bd+=`</ul><div class='c'></div>
+           <center><input type='submit' class='btn'><span style='margin-right:50px'>&nbsp;</span><input type='reset' class='btn'></center>
+           </fieldset><br/>
+            <div class='div_url'></div>
+            <iframe src='about:_blank' style='border:none;width:99%;height:10px' onload='ifr_load(this)'></iframe>
+            <div class='result'></div>
+            </form>
+            </div>`;
           }
         
       tabs_str:=tabs_hd+"</ul></div>"+tabs_bd+"</div></div>";
@@ -368,5 +414,5 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 }
 
 func getVersion() string{
-   return string(loadRes("res/version"));
+   return strings.TrimSpace(string(loadRes("res/version")));
 }

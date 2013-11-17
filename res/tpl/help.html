@@ -20,6 +20,15 @@
 		}
 		var f = $(form);
 		var _url = form.action + "?" + f.serialize();
+		
+		if(findByName(f,'format').val()=="jsonp"){
+   		var jsonp_cb_fn=window["jsonp_form_"+name]||"";
+   		if(jsonp_cb_fn && $.isFunction(jsonp_cb_fn)){
+   			 $.getScript(_url);
+   			return false;
+   		    }
+		}
+		
 		f.find(".div_url").html("<a href='"+_url+"' target='_blank'>" + _url + "</a><span class='right'></span>").addClass("panel-1");
 		f.find("iframe").attr("src", _url).data("start",(new Date()).getTime());
 		return false;
@@ -27,7 +36,14 @@
 	function ifr_load(ifr) {
 		var start=$(ifr).data("start");
 		var used=(new Date()).getTime()-start;
-		$(ifr).height(50).height($(ifr).contents().find("body").outerHeight() + 50);
+		var _resize=function(){
+			var _h=$(ifr).contents().find("body").outerHeight();
+    		$(ifr).height(50).height( _h+ 50);
+		};
+		_resize();
+		setTimeout(_resize,500);
+		setTimeout(_resize,2000);
+		
 		$(ifr).parent("form").find("div.div_url span").html("used : <b>"+(used/1000).toFixed(2)+"</b>s");
 	}
 </script>
@@ -38,6 +54,7 @@
 </style>
 </head>
 <body>
+   <div class='right'>version:{{.version}}</div>
 	<h1>
 		{{.title}}<font style='font-size: 16px'>&nbsp;cmd2http</font>&nbsp;&nbsp;
 		<font style='font-size:14px' onclick="$('#div_useage').toggle()"><a href='javascript:;'>help</a></font>
