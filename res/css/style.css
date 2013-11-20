@@ -62,33 +62,13 @@ table tr.jf_select td,table tr.jf_select th{background: #CFE7FF;}
 
 .jw-msg{position: fixed;bottom: 40px;left:25%;text-align: center;width: 50%;background-color:#000;filter: alpha(opacity=80);opacity: 0.8;color:#fff;z-index:999999;padding:10px;font-size:20px;border-radius:10px}
 
-.icon-add,.icon{background:url('img/icon0.gif') no-repeat;background-position:0 -2px; padding-left:16px;cursor: pointer;min-height:20px;}
-.icon-close,.icon-del{background-position:0 -86px}
-.icon-save{background-position:0 -622px}
-.icon-edit{background-position:0 -1042px}
-.icon-fold{background-position:0 -1180px}
-.icon-expand{background-position:0 -1220px}
-.icon-search{background-position:0 -1092px}
-.icon-refresh{background-position:0 -286px}
-.icon-ok{background-position:0 -260px}
-.icon-no{background-position:0 -235px}
-.icon-view{background-position:0 -664px}
-.icon-print{background-position:0 -130px}
-.icon-add1{background-position:0 -1144px}
-.icon-choose{background: url('img/icon-choose.png')}
-.icon-money{background-position:0 -1393px}
-.icon-home{background-position:0 -1294px}
-.icon-mail{background-position:0 -1355px}
-.icon-opt{background-position:0 -1373px}
-.icon-phone{background-position:0 -882px}
-
 
 .todo{padding:10px;border-radius:10px;border:1px solid #999900;margin: 10px;background:#ccffcc}
 .todo h3{font-weight: bold;margin:-10px 0 5px -5px;font-size:14px}
 .todo ul{padding-left:30px}
 .todo li{list-style:decimal;}
 
-.note{padding:5px;padding-left:26px;margin:5px 0 5px;background:url('img/i.png') no-repeat 3px 3px #cedff3;border-radius:5px;font-size:12px;line-height:20px }
+.note{padding:5px;padding-left:26px;margin:5px 0 5px;background:#cedff3;border-radius:5px;font-size:12px;line-height:20px }
 .note ul,.ul-num{padding-left:20px}
 .note ul li,.ul-num li{list-style:decimal}
 

@@ -16,6 +16,7 @@ import (
 	 "os/exec"
 	 "mime"
 	 "html"
+	 "syscall"
 	 "path/filepath"
 	 "text/template"
 	 jsonConf "github.com/daviddengcn/go-ljson-conf"
@@ -30,6 +31,8 @@ type param struct{
   name string
   defaultValue string
   isValParam bool
+  values []string
+  style string
 }
 
 type Conf struct{
@@ -170,7 +173,9 @@ func loadConfig(){
 	        tmp:=strings.Split(item+"|","|")
 	        _param.name=tmp[0][1:]
 	        _param.defaultValue=tmp[1]
-	       }
+	       _param.style=config.String(conf_path_pre+"params."+_param.name+".style","")
+	       _param.values=config.StringList(conf_path_pre+"params."+_param.name+".values",[]string{})
+	        }
 	       conf.params=append(conf.params,_param)
 //	       fmt.Println(_param.name,_param.defaultValue)
 	    }
@@ -224,6 +229,9 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 			}
 	      myHandler_help(w,r)
 	      return;
+	   }else if(path=="favicon.ico"){
+	      response_res(w,"res/css/favicon.ico")
+	      return
 	   }
 	   
 	  logStr:=r.RemoteAddr+" req:"+r.RequestURI+" "
@@ -235,6 +243,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  conf,has:=confMap[path]
 	  if(!has) {
 	     logStr=logStr+"not support cmd"
+	     w.WriteHeader(404)
 	     fmt.Fprintf(w,"not support")
 	     return;
 	  }
@@ -254,6 +263,9 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  cmd := Command(conf.cmd,args)
   	  var out bytes.Buffer
 		cmd.Stdout = &out
+		
+  	  var outErr bytes.Buffer
+		cmd.Stderr = &outErr
 	   err:=cmd.Start()
 	 
 
@@ -287,11 +299,17 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
                killCmd("timeout")
 //               w.WriteHeader();
           case <-done:
-                  
 		}
+		cmd_status := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		logStr+=fmt.Sprintf(" [status:%d]",cmd_status.ExitStatus())
 	  
-		if(!isResonseOk){
-		    
+		if(!isResonseOk || !cmd.ProcessState.Success()){
+		    w.WriteHeader(500)
+		    w.Write([]byte(logStr))
+		    w.Write([]byte("\n\nStdOut:\n"))
+		    w.Write(out.Bytes())
+		    w.Write([]byte("\nErrOut:\n"))
+		    w.Write(outErr.Bytes())
 		    return;
 		}
 		
@@ -307,7 +325,6 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  if(charset==""){
 	     charset=conf.charset
 	  }
-	  
 	  if(format=="" || format=="html"){
 	       w.Header().Set("Content-Type","text/html;charset="+charset)
 	       if(format==""){
@@ -331,13 +348,16 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	   }
 }
 
-
-func myHandler_res(w http.ResponseWriter, r *http.Request){
-   mimeType:= mime.TypeByExtension(filepath.Ext(r.URL.Path))
+func response_res(w http.ResponseWriter,path string){
+   mimeType:= mime.TypeByExtension(filepath.Ext(path))
    if(mimeType!=""){
        w.Header().Set("Content-Type",mimeType)
      }
-    w.Write(loadRes(r.URL.Path))
+    w.Write(loadRes(path))
+}
+
+func myHandler_res(w http.ResponseWriter, r *http.Request){
+    response_res(w,r.URL.Path)
 }
 
 func myHandler_help(w http.ResponseWriter, r *http.Request){
@@ -360,8 +380,20 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
                          }
-                   tabs_bd+="<li>"+_param.name+
-                   ":<input class='r-text p_"+_param.name+"' type='text' name='"+_param.name+"' "+placeholder+"></li>\n";
+                   if(_param.style!=""){
+                      placeholder+=`style="`+_param.style+`"`
+                          }
+                   tabs_bd+="<li>"+_param.name+":"
+                   if(len(_param.values)==0){
+                      tabs_bd+="<input class='r-text p_"+_param.name+"' type='text' name='"+_param.name+"' "+placeholder+">";
+                   }else{
+                      tabs_bd+="<select class='r-select p_"+_param.name+"' name='"+_param.name+"' "+placeholder+">"
+                       for _,_v:=range _param.values{
+                        tabs_bd+="<option value=\""+_v+"\">"+_v+"</option>"
+                              }
+                      tabs_bd+="</select>";
+                         }
+                   tabs_bd+="</li>\n"
                      }
                    }
            tabs_bd+="<li>format:<select name='format'><option value=''>default</option><option value='html'>html</option><option value='plain'>plain</option><option value='jsonp'>jsonp</option></select></li>\n";
