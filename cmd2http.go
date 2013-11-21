@@ -32,7 +32,7 @@ type param struct{
   defaultValue string
   isValParam bool
   values []string
-  style string
+  html string
 }
 
 type Conf struct{
@@ -173,7 +173,7 @@ func loadConfig(){
 	        tmp:=strings.Split(item+"|","|")
 	        _param.name=tmp[0][1:]
 	        _param.defaultValue=tmp[1]
-	       _param.style=config.String(conf_path_pre+"params."+_param.name+".style","")
+	       _param.html=config.String(conf_path_pre+"params."+_param.name+".html","")
 	       _param.values=config.StringList(conf_path_pre+"params."+_param.name+".values",[]string{})
 	        }
 	       conf.params=append(conf.params,_param)
@@ -380,8 +380,8 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
                          }
-                   if(_param.style!=""){
-                      placeholder+=`style="`+_param.style+`"`
+                   if(_param.html!=""){
+                      placeholder+=" "+_param.html
                           }
                    tabs_bd+="<li>"+_param.name+":"
                    if(len(_param.values)==0){
