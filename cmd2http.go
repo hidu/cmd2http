@@ -187,12 +187,10 @@ func loadConfig(){
 }
 
 func loadRes(path string) []byte{
-    path=strings.TrimLeft(path,"/")
-    res,err:=resources.Find(path)
-    if(err!=nil){
-      log.Println("load res[",path,"] failed",err.Error())
-      return []byte{};
-     }
+     res,err:=getRes(path)
+     if(err!=nil){
+        return []byte{}
+      }
      r,_:=res.Open()
      bf,err:=ioutil.ReadAll(r)
      if(err!=nil){
@@ -201,6 +199,15 @@ func loadRes(path string) []byte{
      return bf
 }
 
+func getRes(path string)(resources.Resource,error){
+    path=strings.TrimLeft(path,"/")
+    res,err:=resources.Find(path)
+    if(err!=nil){
+      log.Println("load res[",path,"] failed",err.Error())
+      return nil,err
+     }
+     return res,nil
+}
 
 
 func Command(name string, args []string) *exec.Cmd {
@@ -230,7 +237,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	      myHandler_help(w,r)
 	      return;
 	   }else if(path=="favicon.ico"){
-	      response_res(w,"res/css/favicon.ico")
+	      response_res(w,r,"res/css/favicon.ico")
 	      return
 	   }
 	   
@@ -348,16 +355,31 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	   }
 }
 
-func response_res(w http.ResponseWriter,path string){
+func response_res(w http.ResponseWriter,r *http.Request,path string){
+    res,err:=getRes(path)
+    if(err!=nil){
+        w.WriteHeader(404)
+        return;
+     }
+    finfo,_:=res.Stat()
+    modtime:=finfo.ModTime()
+    if t, err := time.Parse(http.TimeFormat, r.Header.Get("If-Modified-Since")); err == nil && modtime.Before(t.Add(1*time.Second)) {
+			h := w.Header()
+		 	delete(h, "Content-Type")
+   		delete(h, "Content-Length")
+   		w.WriteHeader(http.StatusNotModified)
+   		return
+   		}
    mimeType:= mime.TypeByExtension(filepath.Ext(path))
    if(mimeType!=""){
        w.Header().Set("Content-Type",mimeType)
      }
+    w.Header().Set("Last-Modified",modtime.UTC().Format(http.TimeFormat))
     w.Write(loadRes(path))
 }
 
 func myHandler_res(w http.ResponseWriter, r *http.Request){
-    response_res(w,r.URL.Path)
+    response_res(w,r,r.URL.Path)
 }
 
 func myHandler_help(w http.ResponseWriter, r *http.Request){
