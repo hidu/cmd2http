@@ -251,7 +251,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	  if(!has) {
 	     logStr=logStr+"not support cmd"
 	     w.WriteHeader(404)
-	     fmt.Fprintf(w,"not support")
+	     fmt.Fprintf(w,"<h1>404</h1>")
 	     return;
 	  }
 	  
@@ -307,16 +307,21 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 //               w.WriteHeader();
           case <-done:
 		}
-		cmd_status := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		logStr+=fmt.Sprintf(" [status:%d]",cmd_status.ExitStatus())
+		if(isResonseOk){
+   		cmd_status := cmd.ProcessState.Sys().(syscall.WaitStatus)
+   		logStr+=fmt.Sprintf(" [status:%d]",cmd_status.ExitStatus())
+		}
 	  
 		if(!isResonseOk || !cmd.ProcessState.Success()){
 		    w.WriteHeader(500)
+		    w.Write([]byte("<h1>Error 500</h1><pre>"))
 		    w.Write([]byte(logStr))
 		    w.Write([]byte("\n\nStdOut:\n"))
 		    w.Write(out.Bytes())
 		    w.Write([]byte("\nErrOut:\n"))
 		    w.Write(outErr.Bytes())
+		    w.Write([]byte("</pre>"))
+		    
 		    return;
 		}
 		
@@ -389,7 +394,8 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
        for name,_conf:=range confMap{
            tabs_hd+="<li><a>"+name+"</a></li>"
            tabs_bd+="\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
-           tabs_bd+="<div class='note'><div><b>command</b> :&nbsp;[&nbsp;"+_conf.cmdStr+
+           tabs_bd+="<div class='note'><div><b>uri</b> :&nbsp;/"+name+"</div>"+
+           "<div><b>command</b> :&nbsp;[&nbsp;"+_conf.cmdStr+
            "&nbsp;]&nbsp;<b>timeout</b> :&nbsp;"+fmt.Sprintf("%d",_conf.timeout)+"s</div>"
            if(_conf.intro!=""){
              tabs_bd=tabs_bd+"<div><b>intro</b> :&nbsp;&nbsp;"+_conf.intro+"</div>"
@@ -430,10 +436,10 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
            tabs_bd+="</select></li>"
            
            tabs_bd+=`</ul><div class='c'></div>
-           <center><input type='submit' class='btn'><span style='margin-right:50px'>&nbsp;</span><input type='reset' class='btn'></center>
+           <center><input type='submit' class='btn'><span style='margin-right:50px'>&nbsp;</span><input type='reset' class='btn' onclick='form_reset(this.form)'></center>
            </fieldset><br/>
             <div class='div_url'></div>
-            <iframe src='about:_blank' style='border:none;width:99%;height:10px' onload='ifr_load(this)'></iframe>
+            <iframe src='about:_blank' style='border:none;width:99%;height:20px' onload='ifr_load(this)'></iframe>
             <div class='result'></div>
             </form>
             </div>`;
