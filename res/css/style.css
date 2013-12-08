@@ -8,6 +8,7 @@ fieldset{border:1px solid #ccc;border-radius:10px;padding:10px}
 input.r-text,textarea,input.r-search,.r-password{border: 1px solid #CCCCCC;padding: 3px 1px;margin:1px}
 input.r-text:focus,textarea:focus,.r-search:focus,.r-password:focus{border-color:#6FB1DF;box-shadow:0 0 5px #6FB1DF}
 
+.t_c{text-align: center;}
 .cpanel {background: #ffffff;border-radius: 10px;margin-bottom: 10px;border: 1px solid #e6eaed;}
 
 .cpanel >.hd {background: #e6eaed;padding: 3px 0 3px 10px;border-radius: 10px 10px 0 0;color: #000;font-weight: bold;}
@@ -71,6 +72,7 @@ table tr.jf_select td,table tr.jf_select th{background: #CFE7FF;}
 .note{padding:5px;padding-left:26px;margin:5px 0 5px;background:#cedff3;border-radius:5px;font-size:12px;line-height:20px }
 .note ul,.ul-num{padding-left:20px}
 .note ul li,.ul-num li{list-style:decimal}
+.note-g{background: #e6eaed}
 
 .panel-1{background: #efefef;padding:10px;margin-bottom: 10px}
 .panel-1-hd{font-weight: bold;margin-bottom: 10px}
@@ -109,3 +111,16 @@ form table tbody th{text-align: right}
 .btn:active {
     box-shadow: 0 0 0 1px rgba(0,0,0, 0.15) inset, 0 0 6px rgba(0,0,0, 0.20) inset;
 }
+
+#header{margin:10px}
+#center{margin-left:160px}
+#content{min-height: 500px}
+#aside{float:left;width:155px;overflow: hidden;}
+#aside ul{list-style:none;margin-left: -30px}
+#aside ul li {float:left;clear:none;width:155px}
+#aside a{color: #0049CE;display: block;}
+#main_menu{margin: 0}
+#main_menu a.cur{background: #EEEEEE;heigt:30px;border-radius:0 15px 15px 0}
+#main_menu dd{margin-left: 0px;}
+#main_menu dd a{padding-left:10px}
+#main_menu dt{font-weight: bold;}

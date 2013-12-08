@@ -3,6 +3,7 @@
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 <meta name="author" content="duwei">
+<meta name="src" content="https://github.com/hidu/cmd2http">
 <title>{{.title}} cmd2http {{.version}}</title>
 <link type="text/css" rel="stylesheet" href="/res/css/style.css">
 <script src="/res/js/jquery.js"></script>
@@ -10,7 +11,7 @@
 <script>
 	function findByName(form,name){
 		return $(form).find("[name="+name+"]");
-	};
+	}
 	function form_check(form, name) {
 		var fn = window["form_" + name] || "";
 		if (fn && $.isFunction(fn)) {
@@ -35,6 +36,10 @@
 		return false;
 	}
 	
+	function show_cmd(cmd){
+		$("#div_"+cmd).show();
+		$(".cmd_div").not("#div_"+cmd).hide();
+	}
 	function form_reset(form){
 		var ifr=$(form).find("iframe");
 		var ifr_c=ifr.clone(true);
@@ -48,15 +53,45 @@
 		var used=(new Date()).getTime()-start;
 		var _resize=function(){
 			var _h=$(ifr).contents().find("body").outerHeight();
-    		$(ifr).height(50).height( _h+ 50);
+       	$(ifr).height(50).height(Math.max( _h+ 100,$(window).height()));
 		};
 		_resize();
-		for(var i=1;i<20;i++){
-   		setTimeout(_resize,i*500);
-		}
-		
 		$(ifr).parent("form").find("div.div_url span").html("used : <b>"+(used/1000).toFixed(2)+"</b>s");
 	}
+	
+    var onmessage = function(e) {
+       var msg=e.data.split("_");
+       if(msg.length==3 && msg[1]=="height"){
+    	     var ifr=$("#ifr_"+msg[0]);
+    	     if(msg[2]>ifr.height()){
+       	     ifr.height(msg[2]+50);
+    	     }
+         }
+      };
+     if (typeof window.addEventListener != 'undefined') {
+       window.addEventListener('message', onmessage, false);
+     } else if (typeof window.attachEvent != 'undefined') {
+       window.attachEvent('onmessage', onmessage);
+     }
+     $().ready(function(){
+    	 $("#div_meun").css("min-height",$(window).height()*0.8);
+    	 var link_a=$("#main_menu a");
+    	 link_a.click(function(){
+             link_a.removeClass("cur");
+             $(this).addClass("cur");
+         });
+    	 
+    	 if(location.hash.length>1){
+    		 link_a.each(function(){
+    			 if($(this).attr("href")==location.hash){
+    				 $(this).click();
+    			 }
+    		 });
+    	 }else{
+    		 link_a.eq(0).click();
+    	 }
+  		 
+     });
 </script>
 <style>
 .r-text {
@@ -65,30 +100,15 @@
 </style>
 </head>
 <body>
-   <div class='right'>version:{{.version}}</div>
-	<h1>
-		{{.title}}<font style='font-size: 16px'>&nbsp;cmd2http</font>&nbsp;&nbsp;
-		<font style='font-size:14px' onclick="$('#div_useage').toggle()"><a href='javascript:;'>help</a></font>
-	</h1>
-	<div style='margin-bottom: 5px'>{{.intro}}</div>
-	<div class="cpanel" id="div_useage" style="display:none">
-		<div class="hd">useage</div>
-		<div class='bd'>
-			<p>
-				defined cmd: <b>echo -n $wd $a $b|defaultValue</b>
-			</p>
-			<p>
-				http://localhost/<b>echo?wd=hello&a=world</b> ==&gt; <b>echo -n
-					hello world defaultValue</b>
-			</p>
-		</div>
-	</div>
-	<br />
-	<div id='cmd_tab'>
-	{{.form_tabs}}
-	</div>
-	<script>
-	jw.tab("#cmd_tab > .jw-tab >.hd>ul>li","#cmd_tab > .jw-tab >.bd >div");
-	</script>
+  <div id="header">
+	   <div class='right'>cmd2http:{{.version}}</div>
+	   <div class='left'><h1>{{.title}}</h1></div>
+		<div class='left' style='padding-left:20px'>{{.intro}}</div>
+		<div class="c"></div>
+  </div>
+  <div id="content">
+	  <div id="aside"><div id='div_meun' class='cpanel'><div class='hd'>cmds</div><div class='bd'>{{.content_menu}}</div></div></div>
+	  <div id="center">{{.content_body}}</div>
+  </div>
 </body>
 </html>

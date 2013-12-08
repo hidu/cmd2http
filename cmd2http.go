@@ -23,6 +23,7 @@ import (
 	  "github.com/cookieo9/resources-go/v2/resources"
    )
 var configPath=flag.String("conf","./cmd2http.conf","config file")
+var _port=flag.Int("port",0,"port")
 
 var port int
 var version string
@@ -44,6 +45,7 @@ type Conf struct{
    intro string
    timeout int
    charset_list []string
+   group string
 }
 
 var confMap map[string]*Conf
@@ -58,6 +60,9 @@ func main(){
    flag.Parse()
 //    log.SetFlags(log.LstdFlags|log.Lshortfile)
     loadConfig()
+    if(*_port>0){
+      port=*_port
+    }
    logFile,_:=os.OpenFile("./cmd2http.log",os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
    defer logFile.Close()
    log.SetOutput(logFile)
@@ -141,6 +146,7 @@ func loadConfig(){
 	   conf:=new(Conf)
 	   conf.name=k
 	   conf.timeout=timeout
+	   conf.group=config.String(conf_path_pre+"group","default")
 	   
 	   conf.charset=config.String(conf_path_pre+"charset",charset_default)
       conf.intro=config.String(conf_path_pre+"intro","")
@@ -277,7 +283,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	 
 
 	  if(err!=nil){
-	     logStr+=err.Error()
+	     logStr+="Error:"+err.Error()
 	     fmt.Fprintf(w,err.Error())
 	     return;
 	   }
@@ -343,6 +349,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
    	       fmt.Fprintf(w,str,conf.charset,conf.name,html.EscapeString(outStr))
 	       }else{
 	          w.Write([]byte(outStr))
+	          w.Write([]byte("<script>window.postMessage && window.parent.postMessage('"+conf.name+"_height_'+document.body.scrollHeight,'*')</script>"))
 	         }
 	   }else if(format=="jsonp"){
           w.Header().Set("Content-Type","text/javascript;charset="+charset)
@@ -389,12 +396,18 @@ func myHandler_res(w http.ResponseWriter, r *http.Request){
 
 func myHandler_help(w http.ResponseWriter, r *http.Request){
        str:=string(loadRes("res/tpl/help.html"));
-       tabs_hd:="<div class='jw-tab'><div class='hd'><ul>\n";
        tabs_bd:="<div class='bd'>";
+       
+       groups:=make(map[string][]string)
+       
        for name,_conf:=range confMap{
-           tabs_hd+="<li><a>"+name+"</a></li>"
-           tabs_bd+="\n\n<div>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
-           tabs_bd+="<div class='note'><div><b>uri</b> :&nbsp;/"+name+"</div>"+
+           if _,_has:=groups[_conf.group];!_has{
+            groups[_conf.group]=[]string{}
+               }
+           groups[_conf.group]=append(groups[_conf.group],name)
+            
+           tabs_bd+="\n\n<div class='cmd_div' id='div_"+name+"' style='display:none'>\n<form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
+           tabs_bd+="<div class='note note-g'><div><b>uri</b> :&nbsp;/"+name+"</div>"+
            "<div><b>command</b> :&nbsp;[&nbsp;"+_conf.cmdStr+
            "&nbsp;]&nbsp;<b>timeout</b> :&nbsp;"+fmt.Sprintf("%d",_conf.timeout)+"s</div>"
            if(_conf.intro!=""){
@@ -403,7 +416,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
            tabs_bd=tabs_bd+"</div>";
            tabs_bd=tabs_bd+"<fieldset><ul class='ul-1'>"
               for _,_param:=range _conf.params{
-                if(_param.isValParam){
+                if(_param.isValParam && _param.name!="charset" && _param.name!="format"){
                    placeholder:=""
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
@@ -425,27 +438,29 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                      }
                    }
            tabs_bd+="<li>format:<select name='format'><option value=''>default</option><option value='html'>html</option><option value='plain'>plain</option><option value='jsonp'>jsonp</option></select></li>\n";
-           tabs_bd+="<li>charset:<select name='charset'>"
-           for _,_charset:=range _conf.charset_list{
-                   _selected:="";
-                   if(_charset==_conf.charset){
-		                   _selected="selected=selected";
-		                  }
-               tabs_bd+="<option value='"+_charset+"' "+_selected+">"+_charset+"</option>"
-              }
-           tabs_bd+="</select></li>"
+           if(len(_conf.charset_list)>1 && _conf.charset!="null"){
+	           tabs_bd+="<li>charset:<select name='charset'>"
+	           for _,_charset:=range _conf.charset_list{
+	                   _selected:="";
+	                   if(_charset==_conf.charset){
+			                   _selected="selected=selected";
+			                  }
+	               tabs_bd+="<option value='"+_charset+"' "+_selected+">"+_charset+"</option>"
+	              }
+	           tabs_bd+="</select></li>"
+           }
            
            tabs_bd+=`</ul><div class='c'></div>
-           <center><input type='submit' class='btn'><span style='margin-right:50px'>&nbsp;</span><input type='reset' class='btn' onclick='form_reset(this.form)'></center>
+           <center><input type='submit' class='btn'><span style='margin-right:50px'>&nbsp;</span><input type='reset' class='btn' onclick='form_reset(this.form)' title='reset the form and abort the request'></center>
            </fieldset><br/>
             <div class='div_url'></div>
-            <iframe src='about:_blank' style='border:none;width:99%;height:20px' onload='ifr_load(this)'></iframe>
+            <iframe id='ifr_`+_conf.name+`' src='about:_blank' style='border:none;width:99%;height:20px' onload='ifr_load(this)'></iframe>
             <div class='result'></div>
             </form>
             </div>`;
           }
         
-      tabs_str:=tabs_hd+"</ul></div>"+tabs_bd+"</div></div>";
+      tabs_str:=tabs_bd+"</div></div>";
       if(isFileExists("./s/my.css")){
         tabs_str+="<link  type='text/css' rel='stylesheet' href='/s/my.css'>";
         }
@@ -453,7 +468,15 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
       if(isFileExists("./s/my.js")){
         tabs_str+="<script src='/s/my.js'></script>";
         }
-      
+        
+      content_menu:="<dl id='main_menu'>"
+      for groupName,names:=range groups{
+      content_menu+="<dt>"+groupName+"</dt>"
+         for _,name:=range names{
+           content_menu+="<dd><a href='#"+name+"' onclick=\"show_cmd('"+name+"')\">"+name+"</a></dd>";
+            }
+        }
+      content_menu+="</dl>"
 	   title:=config.String("title","")
 	   
 	   reg:=regexp.MustCompile(`\s+`)
@@ -465,7 +488,8 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 	   values :=make(map[string]string)
 	   values["version"]=version
 	   values["title"]=title
-	   values["form_tabs"]=tabs_str
+	   values["content_body"]=tabs_str
+	   values["content_menu"]=content_menu
 	   values["intro"]=config.String("intro","")
 	   
 	   
