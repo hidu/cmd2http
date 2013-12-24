@@ -23,7 +23,8 @@ import (
 	  "github.com/cookieo9/resources-go/v2/resources"
    )
 var configPath=flag.String("conf","./cmd2http.conf","config file")
-var _port=flag.Int("port",0,"port")
+var _port=flag.Int("port",0,"http server port,overwrite the port in the config file")
+var _help=flag.Bool("help",false,"show help")
 
 var port int
 var version string
@@ -58,6 +59,10 @@ var charset_default string
 
 func main(){
    flag.Parse()
+    if(*_help){
+      printHelp()
+      os.Exit(0)
+     }
 //    log.SetFlags(log.LstdFlags|log.Lshortfile)
     loadConfig()
     if(*_port>0){
@@ -80,7 +85,6 @@ func startHttpServer(){
    
    addr:=fmt.Sprintf(":%d",port)
    log.Println("listen at",addr)
-   fmt.Println("listen at",addr)
    
    err:=http.ListenAndServe(addr,nil)
    if(err!=nil){
@@ -100,18 +104,25 @@ func in_array(item string,arr []string) bool{
    }
  return false
 }
-
+func printHelp(){
+       fmt.Println("useage:")
+       flag.PrintDefaults()
+       fmt.Println("\nconfig demo:\n")
+       fmt.Println(string(loadRes("res/conf/cmd2http.conf")))
+}
 func loadConfig(){
    version=getVersion()
 
-   log.Println("start load conf [",*configPath,"]")
-   log.Println("use conf:",*configPath)
+//   log.Println("start load conf [",*configPath,"]")
+//   log.Println("use conf:",*configPath)
    
    pathAbs,_:=filepath.Abs(*configPath)
    
    _,_err:= os.Open(pathAbs)
    if _err != nil {
-        panic(_err.Error())
+       log.Println("config file not exists!",*configPath)
+       printHelp()
+       os.Exit(1)
     }
    os.Chdir(filepath.Dir(*configPath))
     
