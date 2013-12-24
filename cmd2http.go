@@ -58,21 +58,41 @@ var charset_list []string
 var charset_default string
 
 func main(){
-   flag.Parse()
+    flag.Parse()
     if(*_help){
       printHelp()
       os.Exit(0)
      }
-//    log.SetFlags(log.LstdFlags|log.Lshortfile)
     loadConfig()
-    if(*_port>0){
-      port=*_port
-    }
-   logFile,_:=os.OpenFile("./cmd2http.log",os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
-   defer logFile.Close()
-   log.SetOutput(logFile)
     
+    if(*_port>0){
+       port=*_port
+     }
+     logPath:="./cmd2http.log"
+	  logFile,_:=os.OpenFile(logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
+	  defer logFile.Close()
+	  log.SetOutput(logFile)
+	  
+      myTimer(5,func(){
+      if(!isFileExists(logPath)){
+           logFile.Close()
+           logFile,_=os.OpenFile(logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
+           log.SetOutput(logFile)
+         }
+     })
     startHttpServer()
+}
+
+func myTimer(sec int,call func()){
+	ticker:= time.NewTicker(time.Duration(sec)*time.Second)
+   go func () {
+		   for{
+		   select {
+		    case <-ticker.C:
+            	call()
+		      }
+    	    }
+    }()
 }
 
 func startHttpServer(){
@@ -125,7 +145,6 @@ func loadConfig(){
        os.Exit(1)
     }
    os.Chdir(filepath.Dir(*configPath))
-    
    var err error
    config, err= jsonConf.Load(*configPath)
 	if err != nil {
