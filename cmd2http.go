@@ -21,6 +21,7 @@ import (
 	 "text/template"
 	 jsonConf "github.com/daviddengcn/go-ljson-conf"
 	  "github.com/cookieo9/resources-go/v2/resources"
+	  "./cache"
    )
 var configPath=flag.String("conf","./cmd2http.conf","config file")
 var _port=flag.Int("port",0,"http server port,overwrite the port in the config file")
@@ -47,6 +48,7 @@ type Conf struct{
    timeout int
    charset_list []string
    group string
+   cache_life int64
 }
 
 var confMap map[string]*Conf
@@ -56,6 +58,12 @@ var config *jsonConf.Conf
 var charset_list []string
 
 var charset_default string
+
+var logPath string
+
+
+var cacheObj cache.FileCache
+var useCache bool
 
 func main(){
     flag.Parse()
@@ -68,20 +76,40 @@ func main(){
     if(*_port>0){
        port=*_port
      }
-     logPath:="./cmd2http.log"
-	  logFile,_:=os.OpenFile(logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
+   logFile,_:=os.OpenFile(logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0644)
 	  defer logFile.Close()
 	  log.SetOutput(logFile)
 	  
-      myTimer(5,func(){
+      myTimer(30,func(){
       if(!isFileExists(logPath)){
            logFile.Close()
-           logFile,_=os.OpenFile(logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0666)
+           logFile,_=os.OpenFile(logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0644)
            log.SetOutput(logFile)
          }
      })
+    setupCache()
     startHttpServer()
 }
+
+func setupCache(){
+	cache_dir:=config.String("cache_dir","")
+   if cache_dir==""{
+     return
+    }
+   info,err:=os.Stat(cache_dir)
+   if err!=nil ||!info.IsDir(){
+      fmt.Println("cache dir must exists and writeable!")
+      os.Exit(1)
+   }
+   _realPath,_:=filepath.Abs(cache_dir)
+   
+   cacheObj=cache.FileCache{_realPath}
+   useCache=true
+   myTimer(60,func(){
+     cacheObj.CheckAll()
+   })
+}
+
 
 func myTimer(sec int,call func()){
 	ticker:= time.NewTicker(time.Duration(sec)*time.Second)
@@ -108,6 +136,7 @@ func startHttpServer(){
    
    err:=http.ListenAndServe(addr,nil)
    if(err!=nil){
+       fmt.Println(err.Error())
        log.Println(err.Error())
      }
 }
@@ -138,13 +167,16 @@ func loadConfig(){
    
    pathAbs,_:=filepath.Abs(*configPath)
    
-   _,_err:= os.Open(pathAbs)
+   f,_err:= os.Open(pathAbs)
+   f.Close()
    if _err != nil {
        log.Println("config file not exists!",*configPath)
        printHelp()
        os.Exit(1)
     }
-   os.Chdir(filepath.Dir(*configPath))
+   conf_dir:=filepath.Dir(pathAbs)
+   os.Chdir(conf_dir)
+   fmt.Println("chdir ",conf_dir)
    var err error
    config, err= jsonConf.Load(*configPath)
 	if err != nil {
@@ -152,7 +184,8 @@ func loadConfig(){
 	  os.Exit(2)
 	}
 	port=config.Int("port",8310)
-	
+	logPath=config.String("log_path","./cmd2http.log")
+		
 	charset_list=config.StringList("charset_list",[]string{})
 	
 	charset_default=config.String("charset","utf-8");
@@ -194,6 +227,8 @@ func loadConfig(){
 	   conf.cmdStr=strings.TrimSpace(conf.cmdStr)
 	   conf.params=make([]*param,0,10)
 	   
+	   conf.cache_life=int64(config.Int(conf_path_pre+"cache",0))
+	   fmt.Println("conf.cache_life",conf.cache_life)
 	   ps:=regexp.MustCompile(`\s+`).Split(conf.cmdStr,-1)
 //	   fmt.Println(ps)
 	   conf.cmd=ps[0]
@@ -262,6 +297,10 @@ func isFileExists(path string) bool{
   return err==nil
 }
 
+func getCacheKey(cmd string,params []string) string{
+     return cmd+"|||"+strings.Join(params,"&")
+}
+
 func myHandler_root(w http.ResponseWriter, r *http.Request){
      startTime:=time.Now()
 	  path:=strings.Trim(r.URL.Path,"/")
@@ -276,18 +315,18 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	      response_res(w,r,"res/css/favicon.ico")
 	      return
 	   }
-	   
 	  logStr:=r.RemoteAddr+" req:"+r.RequestURI+" "
-	  defer func(){
+	  access_log:=func(){
 	       logStr+=fmt.Sprintf(" time_use:%v",time.Now().Sub(startTime))
 	       log.Println(logStr)
-	   }()
+	   }
 	  
 	  conf,has:=confMap[path]
 	  if(!has) {
 	     logStr=logStr+"not support cmd"
 	     w.WriteHeader(404)
 	     fmt.Fprintf(w,"<h1>404</h1>")
+	     access_log()
 	     return;
 	  }
 	  
@@ -303,7 +342,26 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	      }
 	      args[i+1]=val
 	  }
-	  cmd := Command(conf.cmd,args)
+	  use_cache:=r.FormValue("cache")
+	  cacheKey:=""
+//	  fmt.Println("conf.cache_life",conf.cache_life)
+	  if use_cache!="no" && conf.cache_life>3{
+		  cacheKey=getCacheKey(conf.cmd,args)
+//		  log.Println("cache_key:",cacheKey)
+		  cache_has,cache_data:=cacheObj.Get(cacheKey)
+		  if cache_has{
+		     logStr+=" cache hit"
+		     w.Header().Add("cache_hit","1")
+	   	  result_send(w,r,conf,string(cache_data),logStr)
+	   	  access_log()
+	   	  return
+		  }
+	  }
+	 exec_cmd(w,r,conf,args,logStr,cacheKey)
+	 access_log()  
+}
+func exec_cmd(w http.ResponseWriter, r *http.Request,conf *Conf,args []string,logStr string,cacheKey string){
+     cmd := Command(conf.cmd,args)
   	  var out bytes.Buffer
 		cmd.Stdout = &out
 		
@@ -357,16 +415,21 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 		    w.Write([]byte("\nErrOut:\n"))
 		    w.Write(outErr.Bytes())
 		    w.Write([]byte("</pre>"))
-		    
 		    return;
 		}
 		
+		if out.Len()>0 && conf.cache_life>3{
+		    cacheObj.Set(cacheKey,out.String(),conf.cache_life)
+		}
+		result_send(w,r,conf,out.String(),logStr)
+}
+
+func result_send(w http.ResponseWriter, r *http.Request,conf *Conf,outStr string,logStr string){
 	  format:=r.FormValue("format")
 	  str:=`<!DOCTYPE html><html><head>
 	         <meta http-equiv='Content-Type' content='text/html; charset=%s' />
 	         <title>%s cmd2http</title></head><body><pre>%s</pre></body></html>`
 	         
-	  outStr:=out.String()
 	  logStr+=fmt.Sprintf("resLen:%d ",len(outStr))
 	  
 	  charset:=r.FormValue("charset")
@@ -384,6 +447,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	   }else if(format=="jsonp"){
           w.Header().Set("Content-Type","text/javascript;charset="+charset)
 	       cb:=r.FormValue("cb")
+	       path:=strings.Trim(r.URL.Path,"/")
 	       if(cb==""){
 	           cb="jsonp_form_"+path
 	        }
@@ -396,6 +460,7 @@ func myHandler_root(w http.ResponseWriter, r *http.Request){
 	    w.Write([]byte(outStr))
 	   }
 }
+
 
 func response_res(w http.ResponseWriter,r *http.Request,path string){
     res,err:=getRes(path)
@@ -462,7 +527,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
                        for _,_v:=range _param.values{
                         tabs_bd+="<option value=\""+_v+"\">"+_v+"</option>"
                               }
-                      tabs_bd+="</select>";
+                      tabs_bd+="</select>\n";
                          }
                    tabs_bd+="</li>\n"
                      }
@@ -477,11 +542,15 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 			                  }
 	               tabs_bd+="<option value='"+_charset+"' "+_selected+">"+_charset+"</option>"
 	              }
-	           tabs_bd+="</select></li>"
+	           tabs_bd+="</select></li>\n"
            }
            
            tabs_bd+=`</ul><div class='c'></div>
-           <center><input type='submit' class='btn'><span style='margin-right:50px'>&nbsp;</span><input type='reset' class='btn' onclick='form_reset(this.form)' title='reset the form and abort the request'></center>
+           <center>
+	            <input type='submit' class='btn'>
+	            <span style='margin-right:50px'>&nbsp;</span>
+	            <input type='reset' class='btn' onclick='form_reset(this.form)' title='reset the form and abort the request'>
+            </center>
            </fieldset><br/>
             <div class='div_url'></div>
             <iframe id='ifr_`+_conf.name+`' src='about:_blank' style='border:none;width:99%;height:20px' onload='ifr_load(this)'></iframe>
@@ -490,7 +559,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
             </div>`;
           }
         
-      tabs_str:=tabs_bd+"</div></div>";
+      tabs_str:=tabs_bd+"\n</div>";
       if(isFileExists("./s/my.css")){
         tabs_str+="<link  type='text/css' rel='stylesheet' href='/s/my.css'>";
         }
@@ -503,7 +572,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
       for groupName,names:=range groups{
       content_menu+="<dt>"+groupName+"</dt>"
          for _,name:=range names{
-           content_menu+="<dd><a href='#"+name+"' onclick=\"show_cmd('"+name+"')\">"+name+"</a></dd>";
+           content_menu+="<dd><a href='#"+name+"' onclick=\"show_cmd('"+name+"')\">"+name+"</a></dd>\n";
             }
         }
       content_menu+="</dl>"

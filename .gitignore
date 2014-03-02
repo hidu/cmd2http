@@ -26,3 +26,5 @@ _testmain.go
 *.log
 dest/test/
 res/version
+cache_data
+
