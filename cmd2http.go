@@ -228,7 +228,7 @@ func loadConfig(){
 	   conf.params=make([]*param,0,10)
 	   
 	   conf.cache_life=int64(config.Int(conf_path_pre+"cache",0))
-	   fmt.Println("conf.cache_life",conf.cache_life)
+//	   fmt.Println("conf.cache_life",conf.cache_life)
 	   ps:=regexp.MustCompile(`\s+`).Split(conf.cmdStr,-1)
 //	   fmt.Println(ps)
 	   conf.cmd=ps[0]
@@ -544,6 +544,10 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 	              }
 	           tabs_bd+="</select></li>\n"
            }
+          if(_conf.cache_life>3){
+          		_cache_li_str:="<li>cache:<select name='cache'><option value='yes'>yes(%ds)</option><option value='no'>no</option></select></li>"
+          		tabs_bd+=fmt.Sprintf(_cache_li_str,_conf.cache_life)
+              }
            
            tabs_bd+=`</ul><div class='c'></div>
            <center>
