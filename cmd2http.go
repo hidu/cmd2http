@@ -52,6 +52,7 @@ type Conf struct{
 }
 
 var confMap map[string]*Conf
+var confMap_groups []string
 
 var config *jsonConf.Conf
 
@@ -105,8 +106,8 @@ func setupCache(){
    
    cacheObj=cache.FileCache{_realPath}
    useCache=true
-   myTimer(60,func(){
-     cacheObj.CheckAll()
+   myTimer(120,func(){
+     cacheObj.Clean()
    })
 }
 
@@ -178,7 +179,7 @@ func loadConfig(){
    os.Chdir(conf_dir)
    fmt.Println("chdir ",conf_dir)
    var err error
-   config, err= jsonConf.Load(*configPath)
+   config, err= jsonConf.Load(pathAbs)
 	if err != nil {
 	  log.Println(err.Error(),config)
 	  os.Exit(2)
@@ -200,6 +201,7 @@ func loadConfig(){
 	}
 	
 	confMap=make(map[string]*Conf)
+	confMap_groups=make([]string,0,10)
 	
 	cmds:=config.Object("cmds",make(map[string]interface{}))
 	
@@ -210,6 +212,10 @@ func loadConfig(){
 	   conf.name=k
 	   conf.timeout=timeout
 	   conf.group=config.String(conf_path_pre+"group","default")
+	   
+	   if (!in_array(conf.group,confMap_groups)){
+	  	 confMap_groups=append(confMap_groups,conf.group)
+	   }
 	   
 	   conf.charset=config.String(conf_path_pre+"charset",charset_default)
       conf.intro=config.String(conf_path_pre+"intro","")
@@ -489,11 +495,14 @@ func myHandler_res(w http.ResponseWriter, r *http.Request){
     response_res(w,r,r.URL.Path)
 }
 
-func myHandler_help(w http.ResponseWriter, r *http.Request){
-       str:=string(loadRes("res/tpl/help.html"));
-       tabs_bd:="<div class='bd'>";
-       
-       groups:=make(map[string][]string)
+var htmls map[string]string=make(map[string]string)
+
+func headPageCreate(){
+		if _,has:=htmls["body"];has{
+		 return
+		}
+ 		tabs_bd:="<div class='bd'>";
+		groups:=make(map[string][]string)
        
        for name,_conf:=range confMap{
            if _,_has:=groups[_conf.group];!_has{
@@ -564,27 +573,37 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
           }
         
       tabs_str:=tabs_bd+"\n</div>";
-      if(isFileExists("./s/my.css")){
+        
+      content_menu:="<dl id='main_menu'>"
+      for _,groupName :=range confMap_groups{
+          content_menu+="<dt>"+groupName+"</dt>"
+          sub_names:=groups[groupName]
+         for _,name:=range sub_names{
+           content_menu+="<dd><a href='#"+name+"' onclick=\"show_cmd('"+name+"')\">"+name+"</a></dd>\n";
+            }
+        }
+      content_menu+="</dl>"
+      htmls["body"]=tabs_str
+      htmls["menu"]=content_menu
+}
+
+func myHandler_help(w http.ResponseWriter, r *http.Request){
+      headPageCreate()
+ 	   title:=config.String("title","")
+	   
+	   
+	   tabs_str:=""
+	   if(isFileExists("./s/my.css")){
         tabs_str+="<link  type='text/css' rel='stylesheet' href='/s/my.css'>";
         }
       
       if(isFileExists("./s/my.js")){
         tabs_str+="<script src='/s/my.js'></script>";
         }
-        
-      content_menu:="<dl id='main_menu'>"
-      for groupName,names:=range groups{
-      content_menu+="<dt>"+groupName+"</dt>"
-         for _,name:=range names{
-           content_menu+="<dd><a href='#"+name+"' onclick=\"show_cmd('"+name+"')\">"+name+"</a></dd>\n";
-            }
-        }
-      content_menu+="</dl>"
-	   title:=config.String("title","")
-	   
+	   tabs_str+=htmls["body"]
 	   reg:=regexp.MustCompile(`\s+`)
 	   tabs_str=reg.ReplaceAllString(tabs_str," ")
-	   
+	   str:=string(loadRes("res/tpl/help.html"));
 	   str=reg.ReplaceAllString(str," ")
 	   
 	   tpl,_:=template.New("page").Parse(str)
@@ -592,7 +611,7 @@ func myHandler_help(w http.ResponseWriter, r *http.Request){
 	   values["version"]=version
 	   values["title"]=title
 	   values["content_body"]=tabs_str
-	   values["content_menu"]=content_menu
+	   values["content_menu"]=htmls["menu"]
 	   values["intro"]=config.String("intro","")
 	   
 	   

@@ -18,11 +18,6 @@ type FileCache struct{
    Data_dir string
 }
 
-type cacheData struct{
-    Data string
-    Life int64
-}
-
 func (cache *FileCache)Set(key string,data string,life int64) (suc bool){
 //    log.Println("cache set ",key,data)
    cache_path:=cache.genCachePath(key)
@@ -36,7 +31,9 @@ func (cache *FileCache)Set(key string,data string,life int64) (suc bool){
     }
    var bf bytes.Buffer
    enc:=gob.NewEncoder(&bf)
-   enc.Encode(cacheData{data,time.Now().Unix()+life})
+   now:=time.Now().Unix()
+   cdata:=Data{key,[]byte(data),now,life}
+   enc.Encode(cdata)
    f.Write(bf.Bytes())
    return true
 }
@@ -47,19 +44,6 @@ func (cache *FileCache)Get(key string)(has bool,data string){
 	 return cache.getDataByPath(cache_path)
 }
 
-func (cache *FileCache)CheckAll(){
-  info,err:=os.Stat(cache.Data_dir)
-  if err!=nil || !info.IsDir(){
-    return
-  }
-  filepath.Walk(cache.Data_dir,func(file_path string,info os.FileInfo,err error) error{
-     if !info.IsDir(){
-         cache.getDataByPath(file_path)
-      }
-      return nil
-  })
-  
-}
 func (cache *FileCache)genCachePath(key string) string{
    h:=md5.New()
    h.Write([]byte(key))
@@ -80,14 +64,31 @@ func (cache *FileCache)getDataByPath(file_path string)(has bool,data string){
         return
      }
     dec:= gob.NewDecoder(bytes.NewBuffer(data_bf))
-    var cache_data cacheData
+    var cache_data Data
     err= dec.Decode(&cache_data)
     if err!=nil{
       return
      }
-    if (time.Now().Unix()>cache_data.Life){
-      os.Remove(file_path)
-      return
+    if (time.Now().Unix()-cache_data.Life>cache_data.CreateTime){
+      return false,string(cache_data.Data)
      }
-   return true,cache_data.Data
+   return true,string(cache_data.Data)
+}
+
+
+func (cache *FileCache)Clean(){
+  info,err:=os.Stat(cache.Data_dir)
+  if err!=nil || !info.IsDir(){
+    return
+  }
+  filepath.Walk(cache.Data_dir,func(file_path string,info os.FileInfo,err error) error{
+     if !info.IsDir(){
+         has,data:=cache.getDataByPath(file_path)
+         if has || len(data)>0{
+            os.Remove(file_path)
+            }
+         
+      }
+      return nil
+  })
 }
