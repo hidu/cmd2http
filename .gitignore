@@ -22,9 +22,8 @@ _cgo_export.*
 _testmain.go
 
 *.exe
-/bin
 *.log
-dest/test/
+dest
 res/version
 cache_data
 
