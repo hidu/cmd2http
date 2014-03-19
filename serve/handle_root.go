@@ -50,7 +50,7 @@ func (cmd2 *Cmd2HttpServe)myHandler_root(w http.ResponseWriter, r *http.Request)
       use_cache:=r.FormValue("cache")
       cacheKey:=""
 //      fmt.Println("conf.cache_life",conf.cache_life)
-      if use_cache!="no" && conf.cache_life>3{
+      if use_cache!="no" && conf.cache_life>3 {
           cacheKey=GetCacheKey(conf.cmd,args)
 //          log.Println("cache_key:",cacheKey)
           cache_has,cache_data:=cmd2.Cache.Get(cacheKey)
@@ -62,6 +62,6 @@ func (cmd2 *Cmd2HttpServe)myHandler_root(w http.ResponseWriter, r *http.Request)
              return
           }
       }
-     exec_cmd(w,r,conf,args,logStr,cacheKey)
+     cmd2.exec_cmd(w,r,conf,args,logStr,cacheKey)
      access_log()  
 }

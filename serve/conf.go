@@ -46,6 +46,7 @@ func (cmd2 *Cmd2HttpServe)ParseConfig(){
     charset_list=config.StringList("charset_list",[]string{})
     
     charset_default=config.String("charset","utf-8");
+    cmd2.cacheDirPath=config.String("cache_dir","")
     
     if(!In_array(charset_default,charset_list)){
        charset_list=append(charset_list,charset_default);   

@@ -19,12 +19,14 @@ type Cmd2HttpServe struct{
    CmdConfs map[string]*Conf
    Config *jsonConf.Conf
    Cache cache.Cache
+   cacheAble bool
 }
 
 var version string="1.3"
 
 func (cmd2 *Cmd2HttpServe)Run(){
    cmd2.ParseConfig()
+   cmd2.setupCache()
    
    http.Handle("/s/",http.FileServer(http.Dir("./")))
    http.HandleFunc("/res/",myHandler_res)
@@ -56,7 +58,13 @@ func (cmd2 *Cmd2HttpServe)setupLog(){
 }
 
 func (cmd2 *Cmd2HttpServe)setupCache(){
-    if (len(cmd2.cacheDirPath)>5){
-       cache.SetDefaultCacheHandler(cache.NewFileCache(cmd2.cacheDirPath))
-    } 
+     if (len(cmd2.cacheDirPath)>5){
+       cmd2.Cache=cache.NewFileCache(cmd2.cacheDirPath)
+       log.Println("use file cache,cache dir:",cmd2.cacheDirPath)
+       cmd2.cacheAble=true
+      }else{
+       cmd2.Cache=cache.NewNoneCache()
+       log.Printf("use none cache")
+        } 
+      cmd2.Cache.StartGcTimer(600)
 }

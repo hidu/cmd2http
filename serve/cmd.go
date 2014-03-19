@@ -7,7 +7,6 @@ import (
   "fmt"
   "log"
   "time"
-   "github.com/hidu/goutils/cache"
 )
 func Command(name string, args []string) *exec.Cmd {
     aname, err := exec.LookPath(name)
@@ -21,7 +20,7 @@ func Command(name string, args []string) *exec.Cmd {
 }
 
 
-func exec_cmd(w http.ResponseWriter, r *http.Request,conf *Conf,args []string,logStr string,cacheKey string){
+func (cmd2 *Cmd2HttpServe)exec_cmd(w http.ResponseWriter, r *http.Request,conf *Conf,args []string,logStr string,cacheKey string){
      cmd := Command(conf.cmd,args)
         var out bytes.Buffer
         cmd.Stdout = &out
@@ -80,7 +79,7 @@ func exec_cmd(w http.ResponseWriter, r *http.Request,conf *Conf,args []string,lo
         }
         
         if out.Len()>0 && conf.cache_life>3{
-            cache.Set(cacheKey,out.Bytes(),conf.cache_life)
+            cmd2.Cache.Set(cacheKey,out.Bytes(),conf.cache_life)
         }
         result_send(w,r,conf,out.String(),logStr)
 }

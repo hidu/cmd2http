@@ -22,7 +22,8 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
            groups[_conf.group]=append(groups[_conf.group],name)
             
            tabs_bd+="\n\n<div class='cmd_div' id='div_"+name+"' style='display:none'>\n"
-           tabs_bd+=" <form action='/"+name+"' methor='get' onsubmit='return form_check(this,\""+name+"\")' id='form_"+name+"'>\n";
+           _form_str:=` <form action='/%s' methor='get' onsubmit='return form_check(this,"%s")' id='form_%s'>`;
+           tabs_bd+=fmt.Sprintf(_form_str,name,name,name)
            tabs_bd+="<div class='note note-g'><div><b>uri</b> :&nbsp;/"+name+"</div>"+
            "<div><b>command</b> :&nbsp;[&nbsp;"+_conf.cmdStr+
            "&nbsp;]&nbsp;<b>timeout</b> :&nbsp;"+fmt.Sprintf("%d",_conf.timeout)+"s</div>"
@@ -55,11 +56,11 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
                      }
                    }
            tabs_bd+=`<li>format:<select name='format'>
-           <option value=''>default</option>
-           <option value='html'>html</option>
-           <option value='plain'>plain</option>
-           <option value='jsonp'>jsonp</option>
-           </select></li>\n`;
+			           <option value=''>default</option>
+			           <option value='html'>html</option>
+			           <option value='plain'>plain</option>
+			           <option value='jsonp'>jsonp</option>
+			           </select></li>`;
            if(len(_conf.charset_list)>1 && _conf.charset!="null"){
                tabs_bd+="<li>charset:<select name='charset'>"
                for _,_charset:=range _conf.charset_list{
@@ -71,8 +72,14 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
                   }
                tabs_bd+="</select></li>\n"
            }
-          if(_conf.cache_life>3){
-                  _cache_li_str:="<li>cache:<select name='cache'><option value='yes'>yes(%ds)</option><option value='no'>no</option></select></li>"
+          if(_conf.cache_life>3 && cmd2.cacheAble){
+                  _cache_li_str:=`
+                  <li>cache:
+                  <select name='cache'>
+	                  <option value='yes'>yes(%ds)</option>
+	                  <option value='no'>no</option>
+                  </select>
+                  </li>`
                   tabs_bd+=fmt.Sprintf(_cache_li_str,_conf.cache_life)
               }
            
