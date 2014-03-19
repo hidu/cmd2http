@@ -21,7 +21,7 @@ type Cmd2HttpServe struct{
    Cache cache.Cache
 }
 
-var version string
+var version string="1.3"
 
 func (cmd2 *Cmd2HttpServe)Run(){
    cmd2.ParseConfig()
@@ -43,9 +43,9 @@ func (cmd2 *Cmd2HttpServe)Run(){
      }
 }
 func (cmd2 *Cmd2HttpServe)setupLog(){
-	 cmd2.logFile,_=os.OpenFile(cmd2.logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0644)
-	 log.SetOutput(cmd2.logFile)
-	  
+     cmd2.logFile,_=os.OpenFile(cmd2.logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0644)
+     log.SetOutput(cmd2.logFile)
+      
      goutils.SetInterval(func(){
      if(!goutils.File_exists(cmd2.logPath)){
            cmd2.logFile.Close()
@@ -56,7 +56,7 @@ func (cmd2 *Cmd2HttpServe)setupLog(){
 }
 
 func (cmd2 *Cmd2HttpServe)setupCache(){
-	if (len(cmd2.cacheDirPath)>5){
-	   cache.SetDefaultCacheHandler(cache.NewFileCache(cmd2.cacheDirPath))
-	} 
+    if (len(cmd2.cacheDirPath)>5){
+       cache.SetDefaultCacheHandler(cache.NewFileCache(cmd2.cacheDirPath))
+    } 
 }

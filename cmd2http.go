@@ -2,14 +2,14 @@ package main
 
 
 import (
-	"fmt"
-	"log"
-	 "flag"
-	 "os"
-	 jsonConf "github.com/daviddengcn/go-ljson-conf"
-//	  "github.com/cookieo9/resources-go/v2/resources"
-	 "github.com/hidu/cmd2http/serve"
-	 "path/filepath"
+    "fmt"
+    "log"
+     "flag"
+     "os"
+     jsonConf "github.com/daviddengcn/go-ljson-conf"
+//      "github.com/cookieo9/resources-go/v2/resources"
+     "github.com/hidu/cmd2http/serve"
+     "path/filepath"
    )
    
 var configPath=flag.String("conf","./cmd2http.conf","config file")
@@ -17,7 +17,6 @@ var _port=flag.Int("port",0,"http server port,overwrite the port in the config f
 var _help=flag.Bool("help",false,"show help")
 
 var port int
-
 
 var config *jsonConf.Conf
 
@@ -58,10 +57,10 @@ func loadConfig(){
    log.Println("chdir ",conf_dir)
    var err error
    config, err= jsonConf.Load(pathAbs)
-	if err != nil {
-	  log.Println(err.Error(),config)
-	  os.Exit(2)
-	}
+    if err != nil {
+      log.Println(err.Error(),config)
+      os.Exit(2)
+    }
 }
 
 func printHelp(){
