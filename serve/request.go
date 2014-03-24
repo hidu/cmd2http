@@ -12,17 +12,6 @@ import (
   "html"
 )
 
-func Command(name string, args []string) *exec.Cmd {
-    aname, err := exec.LookPath(name)
-    if err != nil {
-        aname = name
-    }
-    return &exec.Cmd{
-        Path: aname,
-        Args: args,
-    }
-}
-
 type Request struct{
    writer http.ResponseWriter
    req *http.Request
@@ -34,6 +23,7 @@ type Request struct{
    cacheKey string
    cmdConf *Conf
    cmdArgs []string
+   cmdEnv map[string]string
 }
 func (req *Request)Deal(){
     req.startTime=time.Now()
@@ -62,7 +52,7 @@ func (req *Request)log(infos ... string){
 
 func (req *Request)Close(){
     used:=fmt.Sprintf("time_use:%v",time.Now().Sub(req.startTime))
-    log.Println(strings.Join(req.logInfo,"\t"),used)
+    log.Println(strings.Join(req.logInfo," "),used)
 //    fmt.Println(len(req.logInfo),req.logInfo)
 }
 
@@ -89,18 +79,31 @@ func (req *Request)tryExecCmd(){
          return;
       }
       
-      args:=make([]string,len(conf.params)+1)
+      args:=make([]string,len(conf.params))
+      env:=make(map[string]string)
+      
+      _param_prefix:="c2h_form_"
+      
       for i,_param:=range conf.params{
           if(!_param.isValParam){
-            args[i+1]=_param.name
+            args[i]=_param.name
              continue
           }
          val:=req.req.FormValue(_param.name)
          if(val==""){
             val=_param.defaultValue
           }
-          args[i+1]=val
+          args[i]=val
+          env[_param_prefix+_param.name]=val
       }
+     for k,v:=range req.req.Form{
+       _key:=_param_prefix+k
+       _,has:=env[_key]
+       if(!has){
+          env[_key]=strings.Join(v,"\t")
+         }
+       }
+        
       use_cache:=req.req.FormValue("cache")
 //      fmt.Println("conf.cache_life",conf.cache_life)
       if use_cache!="no" && conf.cache_life>3 {
@@ -116,7 +119,8 @@ func (req *Request)tryExecCmd(){
       }
       req.cmdConf=conf
       req.cmdArgs=args
-      req.log("["+conf.cmd+" "+strings.Join(args," ")+"]")
+      req.cmdEnv=env
+//      req.log("["+conf.cmd+" "+strings.Join(args," ")+"]")
 //      fmt.Println("args:",args)
       req.exec()
 }
@@ -124,7 +128,13 @@ func (req *Request)tryExecCmd(){
 
 func (req *Request)exec(){
         conf:=req.cmdConf
-        cmd := Command(conf.cmd,req.cmdArgs)
+        cmd := exec.Command(conf.cmd,req.cmdArgs...)
+//        cmd.Env=[]string{"hello=hasasd=1","aaa=asddd"}
+        env:=make([]string,len(req.cmdEnv))
+        for k,v:=range req.cmdEnv{
+           env=append(env,k+"="+v)
+           }
+        cmd.Env=env
         var out bytes.Buffer
         cmd.Stdout = &out
         
