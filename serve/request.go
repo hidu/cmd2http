@@ -51,7 +51,7 @@ func (req *Request)log(infos ... string){
 }
 
 func (req *Request)Close(){
-    used:=fmt.Sprintf("time_use:%v",time.Now().Sub(req.startTime))
+    used:=fmt.Sprintf("time_use:%.3fms",float64(time.Now().Sub(req.startTime).Nanoseconds())/1000000.0)
     log.Println(strings.Join(req.logInfo," "),used)
 //    fmt.Println(len(req.logInfo),req.logInfo)
 }
@@ -103,7 +103,10 @@ func (req *Request)tryExecCmd(){
           env[_key]=strings.Join(v,"\t")
          }
        }
-        
+      req.cmdConf=conf
+      req.cmdArgs=args
+      req.cmdEnv=env
+      
       use_cache:=req.req.FormValue("cache")
 //      fmt.Println("conf.cache_life",conf.cache_life)
       if use_cache!="no" && conf.cache_life>3 {
@@ -117,9 +120,6 @@ func (req *Request)tryExecCmd(){
              return
           }
       }
-      req.cmdConf=conf
-      req.cmdArgs=args
-      req.cmdEnv=env
 //      req.log("["+conf.cmd+" "+strings.Join(args," ")+"]")
 //      fmt.Println("args:",args)
       req.exec()
@@ -129,12 +129,14 @@ func (req *Request)tryExecCmd(){
 func (req *Request)exec(){
         conf:=req.cmdConf
         cmd := exec.Command(conf.cmd,req.cmdArgs...)
-//        cmd.Env=[]string{"hello=hasasd=1","aaa=asddd"}
-        env:=make([]string,len(req.cmdEnv))
-        for k,v:=range req.cmdEnv{
-           env=append(env,k+"="+v)
+        //when use cache,disable the env params
+        if conf.cache_life<3{
+	        env:=make([]string,len(req.cmdEnv))
+	        for k,v:=range req.cmdEnv{
+	           env=append(env,k+"="+v)
+	           }
+	        cmd.Env=env
            }
-        cmd.Env=env
         var out bytes.Buffer
         cmd.Stdout = &out
         
@@ -204,16 +206,18 @@ func (req *Request)exec(){
 
 
 
+          
+var tpl_html string=`<!DOCTYPE html><html><head>
+         <meta http-equiv='Content-Type' content='text/html; charset=%s' />
+          <title>%s cmd2http</title></head><body><pre>%s</pre></body></html>`
 func (req *Request)sendResponse(outStr string){
       format:=req.req.FormValue("format")
-      str:=`<!DOCTYPE html><html><head>
-             <meta http-equiv='Content-Type' content='text/html; charset=%s' />
-             <title>%s cmd2http</title></head><body><pre>%s</pre></body></html>`
              
       req.log(fmt.Sprintf("resLen:%d ",len(outStr)))
       w:=req.writer
       r:=req.req
       conf:=req.cmdConf
+//      fmt.Println("outStr:",outStr)
       charset:=r.FormValue("charset")
       if(charset==""){
          charset=conf.charset
@@ -221,7 +225,10 @@ func (req *Request)sendResponse(outStr string){
       if(format=="" || format=="html"){
            w.Header().Set("Content-Type","text/html;charset="+charset)
            if(format==""){
-              fmt.Fprintf(w,str,conf.charset,conf.name,html.EscapeString(outStr))
+              fmt.Fprintf(w,tpl_html,
+              charset,
+              conf.name,
+              html.EscapeString(outStr))
            }else{
               w.Write([]byte(outStr))
               w.Write([]byte("<script>window.postMessage && window.parent.postMessage('"+conf.name+"_height_'+document.body.scrollHeight,'*')</script>"))

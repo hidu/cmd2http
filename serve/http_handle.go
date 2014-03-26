@@ -147,7 +147,7 @@ func (cmd2 *Cmd2HttpServe)myHandler_help(w http.ResponseWriter, r *http.Request)
 
 
 func (cmd2 *Cmd2HttpServe)myHandler_root(w http.ResponseWriter, r *http.Request){
-     req:=&Request{writer:w,req:r,cmd2:cmd2}
+     req:=Request{writer:w,req:r,cmd2:cmd2}
      req.Deal()
 }
 

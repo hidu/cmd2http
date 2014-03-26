@@ -30,8 +30,8 @@ func (cmd2 *Cmd2HttpServe)Run(){
    
    http.Handle("/s/",http.FileServer(http.Dir("./")))
    http.HandleFunc("/res/",myHandler_res)
-   http.HandleFunc("/",cmd2.myHandler_root)
    http.HandleFunc("/help",cmd2.myHandler_help)
+   http.HandleFunc("/",cmd2.myHandler_root)
    
    addr:=fmt.Sprintf(":%d",cmd2.Port)
    log.Println("listen at",addr)
