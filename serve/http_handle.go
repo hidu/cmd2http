@@ -8,6 +8,7 @@ import (
   "time"
   "mime"
   "path/filepath"
+  "strings"
 )
 var htmls map[string]string=make(map[string]string)
 
@@ -37,6 +38,9 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
            tabs_bd=tabs_bd+"<fieldset><ul class='ul-1'>"
               for _,_param:=range _conf.params{
                 if(_param.isValParam && _param.name!="charset" && _param.name!="format"){
+                   if(_param.values_file!=""){
+                     _param.values=LoadParamValuesFromFile(_param.values_file)
+                         }
                    placeholder:=""
                    if(_param.defaultValue!=""){
                       placeholder="placeholder='"+_param.defaultValue+"'"
@@ -50,7 +54,14 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
                    }else{
                       options:=goutils.NewHtml_Options()
                        for _,_v:=range _param.values{
-                         options.AddOption(_v,_v,false)
+                         _option_key:=_v
+                         _option_val:=_v
+                         _pos:=strings.Index(_v,":")
+                         if(_pos>-1){
+                         _option_key=strings.TrimSpace(_v[:_pos])
+                         _option_val=strings.TrimSpace(_v[_pos+1:])
+                                 }
+                         options.AddOption(_option_key,_option_val,false)
                               }
                       tabs_bd+=goutils.Html_select(_param.name,options,"class='r-select p_"+_param.name+"'",placeholder)
                       tabs_bd+="</select>\n";

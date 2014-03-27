@@ -6,6 +6,7 @@ import (
   "log"
   "github.com/cookieo9/resources-go/v2/resources"
   "io/ioutil"
+   "github.com/hidu/goutils"
 )
 
 func GetVersion() string{
@@ -52,4 +53,23 @@ func In_array(item string,arr []string) bool{
 
 func GetCacheKey(cmd string,params []string) string{
      return cmd+"|||"+strings.Join(params,"&")
+}
+
+func LoadParamValuesFromFile(file_path string)(values []string){
+  if !IsFileExists(file_path){
+    return
+  }
+  bf,err:=goutils.File_get_contents(file_path)
+  if err!=nil{
+     return  
+  }
+  lines:=strings.Split(string(bf),"\n")
+  for _,line:=range lines{
+     line=strings.TrimSpace(line)
+     if (line=="" || line[0]=='#'){
+        continue
+      }
+    values=append(values,line)
+  }
+  return
 }

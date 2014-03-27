@@ -12,6 +12,7 @@ type param struct{
   isValParam bool
   values []string
   html string
+  values_file string
 }
 
 func (p *param)ToString() string{
@@ -111,6 +112,7 @@ func (cmd2 *Cmd2HttpServe)ParseConfig(){
             _param.defaultValue=tmp[1]
            _param.html=config.String(conf_path_pre+"params."+_param.name+".html","")
            _param.values=config.StringList(conf_path_pre+"params."+_param.name+".values",[]string{})
+           _param.values_file=config.String(conf_path_pre+"params."+_param.name+".values_file","")
             }
            conf.params=append(conf.params,_param)
 //           fmt.Println(_param.name,_param.defaultValue)
