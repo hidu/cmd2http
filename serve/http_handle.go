@@ -61,7 +61,7 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
                          _option_key=strings.TrimSpace(_v[:_pos])
                          _option_val=strings.TrimSpace(_v[_pos+1:])
                                  }
-                         options.AddOption(_option_key,_option_val,false)
+                         options.AddOption(_option_key,_option_val,_param.defaultValue==_option_key)
                               }
                       tabs_bd+=goutils.Html_select(_param.name,options,"class='r-select p_"+_param.name+"'",placeholder)
                       tabs_bd+="</select>\n";

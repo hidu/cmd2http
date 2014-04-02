@@ -3,7 +3,7 @@ set -e
 cd $(dirname $0)
 
 go build -ldflags "-s -w" cmd2http.go
-echo "1.1 " $(date +"%Y%m%d.%H%M%S") >res/version
+echo $(date +"%Y%m%d.%H%M%S") >res/version
 zip -r res.zip res
 rm res/version
 cat res.zip>> cmd2http

@@ -38,6 +38,7 @@ func main(){
      
     server:=new(serve.Cmd2HttpServe)
     server.Config=config
+    server.Port=port
     server.Run()
 }
 

@@ -41,7 +41,10 @@ var charset_default string
 
 func (cmd2 *Cmd2HttpServe)ParseConfig(){
     config:=cmd2.Config
-    cmd2.Port=config.Int("port",8310)
+    
+    if cmd2.Port==0 {
+       cmd2.Port=config.Int("port",8310)
+     }
     cmd2.logPath=config.String("log_path","./cmd2http.log")
         
     charset_list=config.StringList("charset_list",[]string{})

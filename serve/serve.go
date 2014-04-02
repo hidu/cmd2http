@@ -22,7 +22,7 @@ type Cmd2HttpServe struct{
    cacheAble bool
 }
 
-var version string="1.3"
+var version string="1.3 "+GetVersion()
 
 func (cmd2 *Cmd2HttpServe)Run(){
    cmd2.ParseConfig()
