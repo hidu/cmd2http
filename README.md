@@ -2,8 +2,11 @@ cmd2http
 =========
 make system command as http service
 
+将cli程序转换为http服务
+
 #build
 use build.sh to compile,dest file is in the dest subdir
+
 windows users should by use the <b>cygwin</b>,because i use zip command to embed resource files(js and css).
 
 #useage
@@ -12,19 +15,15 @@ windows users should by use the <b>cygwin</b>,because i use zip command to embed
 ./cmd2http -conf=../example/cmd2http.conf -port=8080
 
 ##visit with browser
-there is an index (or help) page that you can use it more easy.
-the url is : http://localhost:8080/
+> there is an index (or help) page that you can use it more easy.
+> the url is : <a>http://localhost:8080/</a>
 
 ###call a command
-<pre>
-http://localhost/<b>echo?wd=hello&a=world</b> 
 
-it eq the command:
-<b>#echo -n hello world defaultValue</b> 
+> url: http://localhost/<b>echo?wd=hello&a=world</b> 
+> command exec: #<b>echo -n hello world defaultValue</b> 
+> config: <b>echo -n $wd $a $b|defaultValue </b>
 
-config is very simple:
-<b>echo -n $wd $a $b|defaultValue </b>
-</pre>
 
 ##config demo
 <pre>    
@@ -33,6 +32,7 @@ config is very simple:
    title:"default title"
    intro:"intro info"
    timeout:30
+   cache_dir:"./cache_data/"
    cmds:{
       pwd:{
           cmd:"pwd",
@@ -41,6 +41,7 @@ config is very simple:
        },
       echo:{
          cmd:"echo -n $wd|你好 $a $b"
+         cache:120
         }
    }
 }
