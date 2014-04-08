@@ -4,11 +4,14 @@ make system command as http service
 
 将cli程序转换为http服务
 
+
+
 #build
 use build.sh to compile,dest file is in the dest subdir
 
 windows users should by use the <b>cygwin</b>,because i use zip command to embed resource files(js and css).
 
+or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>
 #useage
 
 ##execute
