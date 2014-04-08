@@ -4,7 +4,7 @@ import (
   "strings"
   "os"
   "log"
-  "github.com/cookieo9/resources-go/v2/resources"
+  "gopkg.in/cookieo9/resources-go.v2"
   "io/ioutil"
    "github.com/hidu/goutils"
 )

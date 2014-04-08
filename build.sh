@@ -2,11 +2,18 @@
 set -e
 cd $(dirname $0)
 
-go build -ldflags "-s -w" cmd2http.go
+DEST_OS=$1
+dest_file="cmd2http"
+if [ "$DEST_OS" == "windows" ];then
+  export GOOS=windows 
+  export GOARCH=386
+  dest_file="cmd2http.exe"
+fi
+go build -o $dest_file -ldflags "-s -w"  cmd2http.go 
 echo $(date +"%Y%m%d.%H%M%S") >res/version
 zip -r res.zip res
 rm res/version
-cat res.zip>> cmd2http
-zip -A cmd2http
-mv cmd2http dest/
+cat res.zip>> $dest_file
+zip -A $dest_file
+mv $dest_file dest/
 rm res.zip
