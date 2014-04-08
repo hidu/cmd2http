@@ -1,31 +1,26 @@
 cmd2http
 =========
-make system command as http service
-
-将cli程序转换为http服务
-
+convert system command as http service  
+将cli程序(系统命令、脚本等)转换为http服务  
 
 
-#build
-use build.sh to compile,dest file is in the dest subdir
+##build
+use build.sh to compile,dest file is in the dest subdir  
+windows users should by use the <b>cygwin</b>,because i use zip command to embed resource files(js and css).  
 
-windows users should by use the <b>cygwin</b>,because i use zip command to embed resource files(js and css).
-
-or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>
-#useage
+or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>  
 
 ##execute
+<code>
 ./cmd2http -conf=../example/cmd2http.conf -port=8080
+</code>
 
-##visit with browser
-> there is an index (or help) page that you can use it more easy.
-> the url is : <a>http://localhost:8080/</a>
+index page: <http://localhost:8080/>  
 
-###call a command
-
-> url: http://localhost/<b>echo?wd=hello&a=world</b> 
-> command exec: #<b>echo -n hello world defaultValue</b> 
-> config: <b>echo -n $wd $a $b|defaultValue </b>
+*execue the hello world  
+> url: <http://localhost/<b>echo?wd=hello&a=world></b>  
+> command exec: #<b>echo -n hello world defaultValue</b>  
+> config: <b>echo -n $wd $a $b|defaultValue </b>  
 
 
 ##config demo
@@ -50,12 +45,10 @@ or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>
 }
 </pre>
 
-##custon index page
-use /s/ as static root
-
-use /s/index.html as index page
-
-you can use /s/my.css and /s/my.js to control the help page form
+##custon style page
+use /s/ as static root  
+use /s/index.html as index page  
+you can use /s/my.css and /s/my.js to control the help page form  
 
 
 <pre>
