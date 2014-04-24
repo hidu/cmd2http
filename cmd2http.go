@@ -8,7 +8,7 @@ import (
      "os"
      jsonConf "github.com/daviddengcn/go-ljson-conf"
 //      "github.com/cookieo9/resources-go/v2/resources"
-     "github.com/hidu/cmd2http/serve"
+     "./serve"
      "path/filepath"
    )
    
