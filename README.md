@@ -6,7 +6,7 @@ convert system command as http service
 
 ##build
 use build.sh to compile,dest file is in the dest subdir  
-windows users should by use the <b>cygwin</b>,because i use zip command to embed resource files(js and css).  
+windows users should by use the <b>cygwin</b>,because i used zip command to embed resource files(js and css) into the binary file.  
 
 or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>  
 
@@ -17,11 +17,12 @@ or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>
 
 index page: <http://localhost:8080/>  
 
-*execue the hello world  
-> url: <http://localhost/<b>echo?wd=hello&a=world></b>  
-> command exec: #<b>echo -n hello world defaultValue</b>  
-> config: <b>echo -n $wd $a $b|defaultValue </b>  
-
+**hello world demo**  
+<pre>
+          url : <http://localhost:8080/echo?wd=hello&a=world>
+command exec : #<b>echo -n hello world defaultValue</b>  
+       config : <b>echo -n $wd $a $b|defaultValue </b>  
+</pre>
 
 ##config demo
 <pre>    
