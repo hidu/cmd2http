@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# build for window: build.sh windows
+# default linux
+
 set -e
 cd $(dirname $0)
 
@@ -9,9 +13,6 @@ if [ "$DEST_OS" == "windows" ];then
   export GOARCH=386
   dest_file="cmd2http.exe"
 fi
-go get -u github.com/daviddengcn/go-ljson-conf
-go get -u github.com/hidu/goutils
-go get -u gopkg.in/cookieo9/resources-go.v2
 go build -o $dest_file -ldflags "-s -w"  cmd2http.go 
 echo $(date +"%Y%m%d.%H%M%S") >res/version
 zip -r res.zip res
@@ -21,3 +22,5 @@ zip -A $dest_file
 mkdir -p dest/
 mv $dest_file dest/
 rm res.zip
+
+echo -e "\ndest file is in the dir dest/"
