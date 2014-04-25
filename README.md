@@ -17,10 +17,10 @@ or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>
 
 index page: <http://localhost:8080/>  
 
-**hello world demo**  
+**hello world demo:**  
 <pre>
-          url : <http://localhost:8080/echo?wd=hello&a=world>
-command exec : #<b>echo -n hello world defaultValue</b>  
+          url : http://localhost:8080/echo?wd=hello&a=world
+command exec : <b>echo -n hello world defaultValue</b>  
        config : <b>echo -n $wd $a $b|defaultValue </b>  
 </pre>
 
@@ -46,7 +46,7 @@ command exec : #<b>echo -n hello world defaultValue</b>
 }
 </pre>
 
-##custon style page
+##custom style page
 use /s/ as static root  
 use /s/index.html as index page  
 you can use /s/my.css and /s/my.js to control the help page form  
