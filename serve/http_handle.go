@@ -52,7 +52,7 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
                    if(len(_param.values)==0){
                       tabs_bd+="<input class='r-text p_"+_param.name+"' type='text' name='"+_param.name+"' "+placeholder+">";
                    }else{
-                      options:=goutils.NewHtml_Options()
+                      options:=utils.NewHtml_Options()
                        for _,_v:=range _param.values{
                          _option_key:=_v
                          _option_val:=_v
@@ -63,7 +63,7 @@ func (cmd2 *Cmd2HttpServe)helpPageCreate(){
                                  }
                          options.AddOption(_option_key,_option_val,_param.defaultValue==_option_key)
                               }
-                      tabs_bd+=goutils.Html_select(_param.name,options,"class='r-select p_"+_param.name+"'",placeholder)
+                      tabs_bd+=utils.Html_select(_param.name,options,"class='r-select p_"+_param.name+"'",placeholder)
                       tabs_bd+="</select>\n";
                          }
                    tabs_bd+="</li>\n"

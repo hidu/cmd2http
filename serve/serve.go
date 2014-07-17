@@ -48,8 +48,8 @@ func (cmd2 *Cmd2HttpServe)setupLog(){
      cmd2.logFile,_=os.OpenFile(cmd2.logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0644)
      log.SetOutput(cmd2.logFile)
       
-     goutils.SetInterval(func(){
-     if(!goutils.File_exists(cmd2.logPath)){
+     utils.SetInterval(func(){
+     if(!utils.File_exists(cmd2.logPath)){
            cmd2.logFile.Close()
            cmd2.logFile,_=os.OpenFile(cmd2.logPath,os.O_CREATE|os.O_RDWR|os.O_APPEND,0644)
            log.SetOutput(cmd2.logFile)

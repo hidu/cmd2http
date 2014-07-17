@@ -59,7 +59,7 @@ func LoadParamValuesFromFile(file_path string)(values []string){
   if !IsFileExists(file_path){
     return
   }
-  bf,err:=goutils.File_get_contents(file_path)
+  bf,err:=utils.File_get_contents(file_path)
   if err!=nil{
      return  
   }

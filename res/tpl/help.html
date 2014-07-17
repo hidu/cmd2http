@@ -20,7 +20,7 @@
 			}
 		}
 		var f = $(form);
-		var _url = form.action + "?" + f.serialize();
+		var _url = form.action + "?" + f.serialize()+"&_="+(new Date()).getTime();
 		var ifr=f.find("iframe");
 		ifr.contents().find("body").html("<center>loading...</center>");
 		if(findByName(f,'format').val()=="jsonp"){
