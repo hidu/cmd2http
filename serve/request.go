@@ -130,13 +130,13 @@ func (req *Request)exec(){
         conf:=req.cmdConf
         cmd := exec.Command(conf.cmd,req.cmdArgs...)
         //when use cache,disable the env params
+        env:=syscall.Environ()
         if conf.cache_life<3{
-	        env:=make([]string,len(req.cmdEnv))
 	        for k,v:=range req.cmdEnv{
 	           env=append(env,k+"="+v)
 	           }
-	        cmd.Env=env
-           }
+        }
+        cmd.Env=env
         var out bytes.Buffer
         cmd.Stdout = &out
         
