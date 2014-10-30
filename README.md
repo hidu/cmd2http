@@ -8,7 +8,7 @@ convert system command as http service
 use build.sh to compile,dest file is in the dest subdir  
 windows users should by use the <b>cygwin</b>,because i used zip command to embed resource files(js and css) into the binary file.  
 
-or you can download the binary here <http://pan.baidu.com/s/1ntuhNSH>  
+or you can download the binary here <http://pan.baidu.com/s/1bnkyWLD#path=%252Fcmd2http>  
 
 ##execute
 <code>

@@ -14,13 +14,11 @@ if [ "$DEST_OS" == "windows" ];then
   dest_file="cmd2http.exe"
 fi
 go build -o $dest_file -ldflags "-s -w"  cmd2http.go 
-echo $(date +"%Y%m%d.%H%M%S") >res/version
 zip -r res.zip res
-rm res/version
 cat res.zip>> $dest_file
 zip -A $dest_file
 mkdir -p dest/
 mv $dest_file dest/
 rm res.zip
 
-echo -e "\ndest file is in the dir dest/"
+echo "done"
