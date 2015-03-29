@@ -66,10 +66,7 @@ func (req *Request) handleStatic() {
 			req.cmd2.myHandler_help(req.writer, req.req)
 		}
 		req.stop = true
-	} else if req.req_path == "favicon.ico" {
-		response_res(req.writer, req.req, "res/css/favicon.ico")
-		req.stop = true
-	}
+	} 
 }
 
 func (req *Request) tryExecCmd() {

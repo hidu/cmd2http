@@ -2,9 +2,6 @@ package serve
 
 import (
 	"github.com/hidu/goutils"
-	"gopkg.in/cookieo9/resources-go.v2"
-	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 )
@@ -19,26 +16,7 @@ func IsFileExists(path string) bool {
 }
 
 func LoadRes(path string) []byte {
-	res, err := GetRes(path)
-	if err != nil {
-		return []byte{}
-	}
-	r, _ := res.Open()
-	bf, err := ioutil.ReadAll(r)
-	if err != nil {
-		log.Println("read res[", path, "] failed", err.Error())
-	}
-	return bf
-}
-
-func GetRes(path string) (resources.Resource, error) {
-	path = strings.TrimLeft(path, "/")
-	res, err := resources.Find(path)
-	if err != nil {
-		log.Println("load res[", path, "] failed", err.Error())
-		return nil, err
-	}
-	return res, nil
+	return []byte(Assest.GetContent(path))
 }
 
 func In_array(item string, arr []string) bool {

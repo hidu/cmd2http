@@ -3,13 +3,10 @@ package serve
 import (
 	"fmt"
 	"github.com/hidu/goutils"
-	"mime"
 	"net/http"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
-	"time"
 )
 
 var htmls map[string]string = make(map[string]string)
@@ -162,29 +159,3 @@ func (cmd2 *Cmd2HttpServe) myHandler_root(w http.ResponseWriter, r *http.Request
 	req.Deal()
 }
 
-func response_res(w http.ResponseWriter, r *http.Request, path string) {
-	res, err := GetRes(path)
-	if err != nil {
-		w.WriteHeader(404)
-		return
-	}
-	finfo, _ := res.Stat()
-	modtime := finfo.ModTime()
-	if t, err := time.Parse(http.TimeFormat, r.Header.Get("If-Modified-Since")); err == nil && modtime.Before(t.Add(1*time.Second)) {
-		h := w.Header()
-		delete(h, "Content-Type")
-		delete(h, "Content-Length")
-		w.WriteHeader(http.StatusNotModified)
-		return
-	}
-	mimeType := mime.TypeByExtension(filepath.Ext(path))
-	if mimeType != "" {
-		w.Header().Set("Content-Type", mimeType)
-	}
-	w.Header().Set("Last-Modified", modtime.UTC().Format(http.TimeFormat))
-	w.Write(LoadRes(path))
-}
-
-func myHandler_res(w http.ResponseWriter, r *http.Request) {
-	response_res(w, r, r.URL.Path)
-}

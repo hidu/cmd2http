@@ -31,7 +31,8 @@ func (cmd2 *Cmd2HttpServe) Run() {
 	cmd2.setupCache()
 
 	http.Handle("/s/", http.FileServer(http.Dir("./")))
-	http.HandleFunc("/res/", myHandler_res)
+	http.Handle("/res/",Assest.HttpHandler("/"))
+	http.Handle("/favicon.ico",Assest.FileHandlerFunc("/res/css/favicon.ico"))
 	http.HandleFunc("/help", cmd2.myHandler_help)
 	http.HandleFunc("/", cmd2.myHandler_root)
 
