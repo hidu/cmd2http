@@ -1,7 +1,9 @@
 package serve
 
 import (
+	"encoding/json"
 	"github.com/hidu/goutils"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -49,4 +51,12 @@ func LoadParamValuesFromFile(file_path string) (values []string) {
 		values = append(values, line)
 	}
 	return
+}
+
+func loadJsonFile(jsonPath string, val interface{}) error {
+	bs, err := ioutil.ReadFile(jsonPath)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bs, &val)
 }

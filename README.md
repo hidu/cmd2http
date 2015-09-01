@@ -12,7 +12,7 @@ or you can download the binary here <http://pan.baidu.com/s/1bnkyWLD#path=%252Fc
 
 ##execute
 <code>
-./cmd2http -conf=../example/cmd2http.conf -port=8080
+./cmd2http -conf=./example/conf/cmd2http.json
 </code>
 
 index page: <http://localhost:8080/>  
@@ -27,20 +27,20 @@ command exec : <b>echo -n hello world defaultValue</b>
 ##config demo
 <pre>    
 {
-   port:8310,
-   title:"default title"
-   intro:"intro info"
-   timeout:30
-   cache_dir:"./cache_data/"
-   cmds:{
-      pwd:{
-          cmd:"pwd",
-          intro:"cmd intor",
-          timeout:10
+   "port":8310,
+   "title":"default title",
+   "intro":"intro info",
+   "timeout":30,
+   "cache_dir":"../cache_data/",
+   "cmds":{
+      "pwd":{
+          "cmd":"pwd",
+          "intro":"cmd intor",
+          "timeout":10
        },
-      echo:{
-         cmd:"echo -n $wd|你好 $a $b"
-         cache:120
+      "echo":{
+         "cmd":"echo -n $wd|你好 $a $b",
+         "cache":120
         }
    }
 }

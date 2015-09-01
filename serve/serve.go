@@ -2,7 +2,6 @@ package serve
 
 import (
 	"fmt"
-	jsonConf "github.com/daviddengcn/go-ljson-conf"
 	"github.com/hidu/goutils"
 	"github.com/hidu/goutils/cache"
 	"log"
@@ -11,32 +10,34 @@ import (
 )
 
 type Cmd2HttpServe struct {
-	logFile      *os.File
-	logPath      string
-	cacheDirPath string
-	Port         int
-	Charset_list []string
-	Charset      string
-	Timeout      int
-	CmdConfs     map[string]*Conf
-	Config       *jsonConf.Conf
-	Cache        cache.Cache
-	cacheAble    bool
+	logFile   *os.File
+	logPath   string
+	config    *serverConf
+	Cache     cache.Cache
+	cacheAble bool
 }
 
 var version string = GetVersion()
 
+func NewCmd2HTTPServe(confPath string) *Cmd2HttpServe {
+	server := new(Cmd2HttpServe)
+	server.config = loadConfig(confPath)
+	return server
+}
+
+func (cmd2 *Cmd2HttpServe) SetPort(port int) {
+	cmd2.config.Port = port
+}
 func (cmd2 *Cmd2HttpServe) Run() {
-	cmd2.ParseConfig()
 	cmd2.setupCache()
 
 	http.Handle("/s/", http.FileServer(http.Dir("./")))
-	http.Handle("/res/",Assest.HttpHandler("/"))
-	http.Handle("/favicon.ico",Assest.FileHandlerFunc("/res/css/favicon.ico"))
+	http.Handle("/res/", Assest.HTTPHandler("/"))
+	http.Handle("/favicon.ico", Assest.FileHandlerFunc("/res/css/favicon.ico"))
 	http.HandleFunc("/help", cmd2.myHandler_help)
 	http.HandleFunc("/", cmd2.myHandler_root)
 
-	addr := fmt.Sprintf(":%d", cmd2.Port)
+	addr := fmt.Sprintf(":%d", cmd2.config.Port)
 	log.Println("listen at", addr)
 	cmd2.setupLog()
 	defer cmd2.logFile.Close()
@@ -61,9 +62,9 @@ func (cmd2 *Cmd2HttpServe) setupLog() {
 }
 
 func (cmd2 *Cmd2HttpServe) setupCache() {
-	if len(cmd2.cacheDirPath) > 5 {
-		cmd2.Cache = cache.NewFileCache(cmd2.cacheDirPath)
-		log.Println("use file cache,cache dir:", cmd2.cacheDirPath)
+	if len(cmd2.config.CacheDir) > 5 {
+		cmd2.Cache = cache.NewFileCache(cmd2.config.CacheDir)
+		log.Println("use file cache,cache dir:", cmd2.config.CacheDir)
 		cmd2.cacheAble = true
 	} else {
 		cmd2.Cache = cache.NewNoneCache()

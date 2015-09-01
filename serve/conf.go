@@ -3,124 +3,116 @@ package serve
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-type param struct {
-	name         string
-	defaultValue string
+type serverConf struct {
+	Port        int                 `json:"port"`
+	Title       string              `json:"title"`
+	Intro       string              `json:"intro"`
+	Timeout     int                 `json:"timeout"`
+	CharsetList []string            `json:"charset_list"`
+	Cmds        map[string]*cmdItem `json:"cmds"`
+	LogPath     string              `json:"log_path"`
+	CacheDir    string              `json:"cache_dir"`
+	confPath    string              `json:"-"`
+}
+type cmdItem struct {
+	Name        string               `json:"-"`
+	CmdRaw      string               `json:"cmd"`
+	Cmd         string               `json:"-"`
+	Charset     string               `json:"charset"`
+	paramsAll   []*cmdParam          `json:"-"`
+	Params      map[string]*cmdParam `json:"params"`
+	Intro       string               `json:"intro"`
+	Timeout     int                  `json:"timeout"`
+	Charsetlist []string             `json:"charset_list'`
+	Group       string               `json:"group"`
+	CacheLife   int64                `json:"cache_life"`
+}
+
+type cmdParam struct {
+	Name         string
+	DefaultValue string `json:"default_value"`
 	isValParam   bool
-	values       []string
-	html         string
-	values_file  string
+	Values       []string `json:"values"`
+	Html         string   `json:"html"`
+	ValuesFile   string   `json:"values_file'`
 }
 
-func (p *param) ToString() string {
-	return fmt.Sprintf("name:%s,default:%s,isValParam:%x", p.name, p.defaultValue, p.isValParam)
+func (p *cmdParam) ToString() string {
+	return fmt.Sprintf("name:%s,default:%s,isValParam:%x", p.Name, p.DefaultValue, p.isValParam)
 }
 
-type Conf struct {
-	name         string
-	cmdStr       string
-	cmd          string
-	charset      string
-	params       []*param
-	intro        string
-	timeout      int
-	charset_list []string
-	group        string
-	cache_life   int64
-}
-
-var confMap_groups []string
-
-var charset_list []string
-
-var charset_default string
-
-func (cmd2 *Cmd2HttpServe) ParseConfig() {
-	config := cmd2.Config
-
-	if cmd2.Port == 0 {
-		cmd2.Port = config.Int("port", 8310)
+func (conf *serverConf) parse() {
+	if conf.Port <= 0 {
+		conf.Port = 8310
 	}
-	cmd2.logPath = config.String("log_path", "./cmd2http.log")
-
-	charset_list = config.StringList("charset_list", []string{})
-
-	charset_default = config.String("charset", "utf-8")
-	cmd2.cacheDirPath = config.String("cache_dir", "")
-
-	if !In_array(charset_default, charset_list) {
-		charset_list = append(charset_list, charset_default)
+	if conf.Timeout < 1 {
+		conf.Timeout = 30
 	}
-	cmd2.Charset_list = charset_list
-	cmd2.Charset = charset_default
-
-	timeout := config.Int("timeout", 30)
-	if timeout < 1 {
-		timeout = 1
-	}
-
-	cmd2.CmdConfs = make(map[string]*Conf)
-	confMap_groups = make([]string, 0, 10)
-
-	cmds := config.Object("cmds", make(map[string]interface{}))
-
-	for k := range cmds {
-		conf_path_pre := "cmds." + k + "."
-
-		conf := new(Conf)
-		conf.name = k
-		conf.timeout = timeout
-		conf.group = config.String(conf_path_pre+"group", "default")
-
-		if !In_array(conf.group, confMap_groups) {
-			confMap_groups = append(confMap_groups, conf.group)
+	for cmdName, cmdConf := range conf.Cmds {
+		if cmdConf.Group == "" {
+			cmdConf.Group = "default"
 		}
 
-		conf.charset = config.String(conf_path_pre+"charset", charset_default)
-		conf.intro = config.String(conf_path_pre+"intro", "")
-
-		conf.charset_list = config.StringList(conf_path_pre+"charset_list", charset_list)
-
-		if !In_array(conf.charset, conf.charset_list) {
-			conf.charset_list = append(conf.charset_list, conf.charset)
+		if cmdConf.Timeout < 1 {
+			cmdConf.Timeout = 30
 		}
+		cmdConf.CmdRaw = strings.TrimSpace(cmdConf.CmdRaw)
 
-		conf.timeout = config.Int(conf_path_pre+"timeout", timeout)
-
-		conf.cmdStr = config.String(conf_path_pre+"cmd", "")
-
-		conf.cmdStr = strings.TrimSpace(conf.cmdStr)
-		conf.params = make([]*param, 0, 10)
-
-		conf.cache_life = int64(config.Int(conf_path_pre+"cache", 0))
-		//       fmt.Println("conf.cache_life",conf.cache_life)
-		ps := regexp.MustCompile(`\s+`).Split(conf.cmdStr, -1)
+		//cmd eg  echo -n $wd|你好 $a $b
+		ps := regexp.MustCompile(`\s+`).Split(cmdConf.CmdRaw, -1)
 		//       fmt.Println(ps)
-		conf.cmd = ps[0]
-
+		cmdConf.Cmd = ps[0]
+		//@todo
 		for i := 1; i < len(ps); i++ {
 			item := ps[i]
 			//           fmt.Println("i:",i,item)
-			_param := new(param)
-			_param.name = item
+			_param := new(cmdParam)
+			_param.Name = item
 
 			if item[0] == '$' {
-				_param.isValParam = true
 				tmp := strings.Split(item+"|", "|")
-				_param.name = tmp[0][1:]
-				_param.defaultValue = tmp[1]
-				_param.html = config.String(conf_path_pre+"params."+_param.name+".html", "")
-				_param.values = config.StringList(conf_path_pre+"params."+_param.name+".values", []string{})
-				_param.values_file = config.String(conf_path_pre+"params."+_param.name+".values_file", "")
+				name := tmp[0][1:]
+				if _itemConf, has := cmdConf.Params[name]; has {
+					_param = _itemConf
+				}
+				_param.isValParam = true
+				_param.Name = name
+				if _param.DefaultValue == "" {
+					_param.DefaultValue = tmp[1]
+				}
 			}
-			conf.params = append(conf.params, _param)
-			//           fmt.Println(_param.name,_param.defaultValue)
+			cmdConf.paramsAll = append(cmdConf.paramsAll, _param)
 		}
-		log.Println("register[", k, "] cmd:", conf.cmdStr)
-		cmd2.CmdConfs[k] = conf
+		log.Println("register[", cmdName, "] cmd:", cmdConf.CmdRaw)
 	}
+}
+
+func (conf *serverConf) groups() []string {
+	var groups []string
+	for _, cmdItem := range conf.Cmds {
+		if !In_array(cmdItem.Group, groups) {
+			groups = append(groups, cmdItem.Group)
+		}
+	}
+	return groups
+}
+
+func loadConfig(confPath string) (serConf *serverConf) {
+	err := loadJsonFile(confPath, &serConf)
+	if err != nil {
+		log.Fatalln("load config failed:", err)
+	}
+	serConf.parse()
+	pathAbs, _ := filepath.Abs(confPath)
+	serConf.confPath = pathAbs
+	conf_dir := filepath.Dir(pathAbs)
+	os.Chdir(conf_dir)
+	log.Println("chdir ", conf_dir)
+	return
 }

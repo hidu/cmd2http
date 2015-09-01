@@ -13,7 +13,7 @@
 		return $(form).find("[name="+name+"]");
 	}
 	function form_check(form, name) {
-		var fn = window["form_" + name] || "";
+		var fn = window["form_"+name+"_submit"] || "";
 		if (fn && $.isFunction(fn)) {
 			if (false === fn.call(form)) {
 				return false
@@ -24,7 +24,7 @@
 		var ifr=f.find("iframe");
 		ifr.contents().find("body").html("<center>loading...</center>");
 		if(findByName(f,'format').val()=="jsonp"){
-   		var jsonp_cb_fn=window["jsonp_form_"+name]||"";
+   		var jsonp_cb_fn=window["form_"+name+"_jsonp"]||"";
    		if(jsonp_cb_fn && $.isFunction(jsonp_cb_fn)){
    			 $.getScript(_url);
    			return false;

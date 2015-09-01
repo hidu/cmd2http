@@ -22,7 +22,7 @@ type Request struct {
 	logInfo   []string
 	stop      bool
 	cacheKey  string
-	cmdConf   *Conf
+	cmdConf   *cmdItem
 	cmdArgs   []string
 	cmdEnv    map[string]string
 }
@@ -66,11 +66,11 @@ func (req *Request) handleStatic() {
 			req.cmd2.myHandler_help(req.writer, req.req)
 		}
 		req.stop = true
-	} 
+	}
 }
 
 func (req *Request) tryExecCmd() {
-	conf, has := req.cmd2.CmdConfs[req.req_path]
+	conf, has := req.cmd2.config.Cmds[req.req_path]
 	if !has {
 		req.log("status:404")
 		req.writer.WriteHeader(404)
@@ -78,22 +78,22 @@ func (req *Request) tryExecCmd() {
 		return
 	}
 
-	args := make([]string, len(conf.params))
+	args := make([]string, len(conf.paramsAll))
 	env := make(map[string]string)
 
 	_param_prefix := "c2h_form_"
 
-	for i, _param := range conf.params {
+	for i, _param := range conf.paramsAll {
 		if !_param.isValParam {
-			args[i] = _param.name
+			args[i] = _param.Name
 			continue
 		}
-		val := req.req.FormValue(_param.name)
+		val := req.req.FormValue(_param.Name)
 		if val == "" {
-			val = _param.defaultValue
+			val = _param.DefaultValue
 		}
 		args[i] = val
-		env[_param_prefix+_param.name] = val
+		env[_param_prefix+_param.Name] = val
 	}
 	for k, v := range req.req.Form {
 		_key := _param_prefix + k
@@ -108,8 +108,8 @@ func (req *Request) tryExecCmd() {
 
 	use_cache := req.req.FormValue("cache")
 	//      fmt.Println("conf.cache_life",conf.cache_life)
-	if use_cache != "no" && conf.cache_life > 3 {
-		req.cacheKey = GetCacheKey(conf.cmd, args)
+	if use_cache != "no" && conf.CacheLife > 3 {
+		req.cacheKey = GetCacheKey(conf.CmdRaw, args)
 		//          log.Println("cache_key:",cacheKey)
 		cache_has, cache_data := req.cmd2.Cache.Get(req.cacheKey)
 		if cache_has {
@@ -126,10 +126,10 @@ func (req *Request) tryExecCmd() {
 
 func (req *Request) exec() {
 	conf := req.cmdConf
-	cmd := exec.Command(conf.cmd, req.cmdArgs...)
+	cmd := exec.Command(conf.Cmd, req.cmdArgs...)
 	//when use cache,disable the env params
 	env := syscall.Environ()
-	if conf.cache_life < 3 {
+	if conf.CacheLife < 3 {
 		for k, v := range req.cmdEnv {
 			env = append(env, k+"="+v)
 		}
@@ -172,7 +172,7 @@ func (req *Request) exec() {
 	select {
 	case <-cc:
 		killCmd("client close")
-	case <-time.After(time.Duration(conf.timeout) * time.Second):
+	case <-time.After(time.Duration(conf.Timeout) * time.Second):
 		killCmd("timeout")
 		//               w.WriteHeader();
 	case <-done:
@@ -195,8 +195,8 @@ func (req *Request) exec() {
 		return
 	}
 
-	if out.Len() > 0 && conf.cache_life > 3 {
-		req.cmd2.Cache.Set(req.cacheKey, out.Bytes(), conf.cache_life)
+	if out.Len() > 0 && conf.CacheLife > 3 {
+		req.cmd2.Cache.Set(req.cacheKey, out.Bytes(), conf.CacheLife)
 	}
 	req.sendResponse(out.String())
 }
@@ -215,24 +215,26 @@ func (req *Request) sendResponse(outStr string) {
 	//      fmt.Println("outStr:",outStr)
 	charset := r.FormValue("charset")
 	if charset == "" {
-		charset = conf.charset
+		charset = conf.Charset
 	}
 	if format == "" || format == "html" {
 		w.Header().Set("Content-Type", "text/html;charset="+charset)
 		if format == "" {
 			fmt.Fprintf(w, tpl_html,
 				charset,
-				conf.name,
+				conf.Name,
 				html.EscapeString(outStr))
 		} else {
 			w.Write([]byte(outStr))
-			w.Write([]byte("<script>window.postMessage && window.parent.postMessage('" + conf.name + "_height_'+document.body.scrollHeight,'*')</script>"))
+			if(req.req.Referer()!=""){
+				w.Write([]byte("<script>window.postMessage && window.parent.postMessage('" + conf.Name + "_height_'+document.body.scrollHeight,'*')</script>"))
+			}
 		}
 	} else if format == "jsonp" {
 		w.Header().Set("Content-Type", "text/javascript;charset="+charset)
 		cb := r.FormValue("cb")
 		if cb == "" {
-			cb = "jsonp_form_" + req.req_path
+			cb = fmt.Sprintf("form_%s_jsonp",req.req_path)
 		}
 		m := make(map[string]string)
 		m["data"] = outStr

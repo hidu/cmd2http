@@ -1,0 +1,44 @@
+{
+    "port": 8310,
+    "title": "default title",
+    "intro": "hello.world@example.com",
+    "timeout": 60,
+    "charset_list": [
+        "utf-8",
+        "gbk",
+        "gb2312"
+    ],
+    "cache_dir": "./cache_data/",
+    "cmds": {
+        "ls": {
+            "cmd": "../cmds/ls.sh a $a b $b $c $d|你好",
+            "intro": "hello",
+            "params": {
+                "c": {
+                    "values": [
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    "html": "style='width:200px'"
+                },
+                "d": {
+                    "values_file": "../data/ls_d.csv"
+                }
+            }
+        },
+        "sleep": {
+            "cmd": "../cmds/sleep.sh $n",
+            "timeout": 10
+        },
+        "sleep_1": {
+            "cmd": "bash ../cmds/sleep.sh $n",
+            "timeout": 10,
+            "group": "test_group"
+        },
+        "echo": {
+            "cmd": "date",
+            "cache": 10
+        }
+    }
+}
