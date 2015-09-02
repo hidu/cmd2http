@@ -1,0 +1,17 @@
+{
+    "cmd": "../cmds/ls.sh a $a b $b $c $d|你好",
+    "intro": "hello",
+    "params": {
+        "c": {
+            "values": [
+                "1",
+                "2",
+                "3"
+            ],
+            "html": "style='width:200px'"
+        },
+        "d": {
+            "values_file": "../data/ls_d.csv"
+        }
+    }
+}

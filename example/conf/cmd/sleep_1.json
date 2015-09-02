@@ -1,0 +1,5 @@
+{
+    "cmd": "bash ../cmds/sleep.sh $n",
+    "timeout": 10,
+    "group": "test_group"
+}

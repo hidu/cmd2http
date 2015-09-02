@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/hidu/goutils"
 	"io/ioutil"
@@ -58,5 +59,14 @@ func loadJsonFile(jsonPath string, val interface{}) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(bs, &val)
+	lines := strings.Split(string(bs), "\n")
+	var bf bytes.Buffer
+	for _, line := range lines {
+		lineNew := strings.TrimSpace(line)
+		if lineNew[0] == '#' || (len(lineNew) > 1 && lineNew[0:2] == "//") {
+			continue
+		}
+		bf.WriteString(lineNew)
+	}
+	return json.Unmarshal(bf.Bytes(), &val)
 }

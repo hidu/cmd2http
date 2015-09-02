@@ -8,15 +8,10 @@ import (
 )
 
 var configPath = flag.String("conf", "./conf/cmd2http.json", "json config file")
-var _port = flag.Int("port", 0, "http server port,overwrite the port in the config file")
-var _help = flag.Bool("help", false, "show help")
+var _port = flag.Int("port", 0, "overwrite the port in the config file")
 
 func main() {
 	flag.Parse()
-	if *_help {
-		printHelp()
-		os.Exit(0)
-	}
 
 	server := serve.NewCmd2HTTPServe(*configPath)
 	if *_port > 0 {
@@ -24,10 +19,11 @@ func main() {
 	}
 	server.Run()
 }
+func init() {
+	df := flag.Usage
 
-func printHelp() {
-	fmt.Println("useage:")
-	flag.PrintDefaults()
-	fmt.Println("\nconfig demo:\n")
-	fmt.Println(string(serve.LoadRes("res/conf/cmd2http.conf")))
+	flag.Usage = func() {
+		df()
+		fmt.Fprintln(os.Stderr, "\n convert system command as http service\n https://github.com/hidu/cmd2http/\n")
+	}
 }

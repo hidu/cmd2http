@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -29,18 +30,27 @@ type cmdItem struct {
 	Params      map[string]*cmdParam `json:"params"`
 	Intro       string               `json:"intro"`
 	Timeout     int                  `json:"timeout"`
-	Charsetlist []string             `json:"charset_list'`
+	Charsetlist []string             `json:"charset_list"`
 	Group       string               `json:"group"`
 	CacheLife   int64                `json:"cache_life"`
 }
 
+func (c *cmdItem) String() string {
+	d, _ := json.MarshalIndent(c, "", "  ")
+	return string(d)
+}
+func (c *serverConf) String() string {
+	d, _ := json.MarshalIndent(c, "", "  ")
+	return string(d)
+}
+
 type cmdParam struct {
-	Name         string
+	Name         string `json:"-"`
 	DefaultValue string `json:"default_value"`
 	isValParam   bool
 	Values       []string `json:"values"`
 	Html         string   `json:"html"`
-	ValuesFile   string   `json:"values_file'`
+	ValuesFile   string   `json:"values_file"`
 }
 
 func (p *cmdParam) ToString() string {
@@ -61,6 +71,12 @@ func (conf *serverConf) parse() {
 
 		if cmdConf.Timeout < 1 {
 			cmdConf.Timeout = 30
+		}
+		if cmdConf.Charsetlist == nil {
+			cmdConf.Charsetlist = make([]string, 0)
+		}
+		if cmdConf.Params == nil {
+			cmdConf.Params = make(map[string]*cmdParam)
 		}
 		cmdConf.CmdRaw = strings.TrimSpace(cmdConf.CmdRaw)
 
@@ -87,6 +103,9 @@ func (conf *serverConf) parse() {
 					_param.DefaultValue = tmp[1]
 				}
 			}
+			if _param.Values == nil {
+				_param.Values = make([]string, 0)
+			}
 			cmdConf.paramsAll = append(cmdConf.paramsAll, _param)
 		}
 		log.Println("register[", cmdName, "] cmd:", cmdConf.CmdRaw)
@@ -108,11 +127,33 @@ func loadConfig(confPath string) (serConf *serverConf) {
 	if err != nil {
 		log.Fatalln("load config failed:", err)
 	}
-	serConf.parse()
 	pathAbs, _ := filepath.Abs(confPath)
 	serConf.confPath = pathAbs
 	conf_dir := filepath.Dir(pathAbs)
 	os.Chdir(conf_dir)
 	log.Println("chdir ", conf_dir)
+	fileNames, err := filepath.Glob(fmt.Sprintf("%s%scmd%s*.json", conf_dir, string(filepath.Separator), string(filepath.Separator)))
+	if err != nil {
+		log.Println("scan cmd config files in sub dir [cmd] failed,skip,err:", err)
+	}
+	cmdFileNameReg := regexp.MustCompile(`^[A-Za-z0-9_]+\.json$`)
+	for _, cmdFilePath := range fileNames {
+		_, cmdFileName := filepath.Split(cmdFilePath)
+		if !cmdFileNameReg.MatchString(cmdFileName) {
+			log.Println(`sub cmd config file ignore [`, cmdFileName, `],not match reg:^[A-Za-z0-9_]+\.json$`)
+			continue
+		}
+		var cmd *cmdItem
+		err := loadJsonFile(cmdFilePath, &cmd)
+		if err != nil {
+			log.Println("load cmd from [", cmdFileName, "] failed,err:", err)
+			continue
+		}
+		cmdName := cmdFileName[:len(cmdFileName)-5]
+		log.Println("load cmd [", cmdName, "] from [", cmdFileName, "],success")
+		serConf.Cmds[cmdName] = cmd
+	}
+
+	serConf.parse()
 	return
 }

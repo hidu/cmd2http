@@ -226,7 +226,7 @@ func (req *Request) sendResponse(outStr string) {
 				html.EscapeString(outStr))
 		} else {
 			w.Write([]byte(outStr))
-			if(req.req.Referer()!=""){
+			if req.req.Referer() != "" {
 				w.Write([]byte("<script>window.postMessage && window.parent.postMessage('" + conf.Name + "_height_'+document.body.scrollHeight,'*')</script>"))
 			}
 		}
@@ -234,7 +234,7 @@ func (req *Request) sendResponse(outStr string) {
 		w.Header().Set("Content-Type", "text/javascript;charset="+charset)
 		cb := r.FormValue("cb")
 		if cb == "" {
-			cb = fmt.Sprintf("form_%s_jsonp",req.req_path)
+			cb = fmt.Sprintf("form_%s_jsonp", req.req_path)
 		}
 		m := make(map[string]string)
 		m["data"] = outStr
