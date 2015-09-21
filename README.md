@@ -179,4 +179,12 @@ function form_sleep_jsonp(data){
 }
 ```
 
+##作为http服务调用
+http://127.0.0.1:8310/ls?format=plain&a=123&b=456&c=789  
+这样调用即可，参数format是用于控制输出内容格式的，接口调用的时候直接使用`format=plain`即可。  
+下面运行界面截图中展现的连接地址即为api调用地址。  
+
+##界面截图
+![界面截图](http://hidu.github.io/cmd2http/screenshot/index.png)
+
 
