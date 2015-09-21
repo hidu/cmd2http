@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -39,8 +40,8 @@ func (c *cmdItem) String() string {
 	d, _ := json.MarshalIndent(c, "", "  ")
 	return string(d)
 }
-func (c *serverConf) String() string {
-	d, _ := json.MarshalIndent(c, "", "  ")
+func (conf *serverConf) String() string {
+	d, _ := json.MarshalIndent(conf, "", "  ")
 	return string(d)
 }
 
@@ -49,12 +50,20 @@ type cmdParam struct {
 	DefaultValue string `json:"default_value"`
 	isValParam   bool
 	Values       []string `json:"values"`
-	Html         string   `json:"html"`
+	HTML         string   `json:"html"`
 	ValuesFile   string   `json:"values_file"`
 }
 
 func (p *cmdParam) ToString() string {
 	return fmt.Sprintf("name:%s,default:%s,isValParam:%x", p.Name, p.DefaultValue, p.isValParam)
+}
+
+func (p *cmdParam) getValues() []string {
+	if p.ValuesFile == "" {
+		return p.Values
+	}
+	return LoadParamValuesFromFile(p.ValuesFile)
+
 }
 
 func (conf *serverConf) parse() {
@@ -115,24 +124,25 @@ func (conf *serverConf) parse() {
 func (conf *serverConf) groups() []string {
 	var groups []string
 	for _, cmdItem := range conf.Cmds {
-		if !In_array(cmdItem.Group, groups) {
+		if !InArray(cmdItem.Group, groups) {
 			groups = append(groups, cmdItem.Group)
 		}
 	}
+	sort.Strings(groups)
 	return groups
 }
 
 func loadConfig(confPath string) (serConf *serverConf) {
-	err := loadJsonFile(confPath, &serConf)
+	err := loadJSONFile(confPath, &serConf)
 	if err != nil {
 		log.Fatalln("load config failed:", err)
 	}
 	pathAbs, _ := filepath.Abs(confPath)
 	serConf.confPath = pathAbs
-	conf_dir := filepath.Dir(pathAbs)
-	os.Chdir(conf_dir)
-	log.Println("chdir ", conf_dir)
-	fileNames, err := filepath.Glob(fmt.Sprintf("%s%scmd%s*.json", conf_dir, string(filepath.Separator), string(filepath.Separator)))
+	confDir := filepath.Dir(pathAbs)
+	os.Chdir(confDir)
+	log.Println("chdir ", confDir)
+	fileNames, err := filepath.Glob(fmt.Sprintf("%s%scmd%s*.json", confDir, string(filepath.Separator), string(filepath.Separator)))
 	if err != nil {
 		log.Println("scan cmd config files in sub dir [cmd] failed,skip,err:", err)
 	}
@@ -144,7 +154,7 @@ func loadConfig(confPath string) (serConf *serverConf) {
 			continue
 		}
 		var cmd *cmdItem
-		err := loadJsonFile(cmdFilePath, &cmd)
+		err := loadJSONFile(cmdFilePath, &cmd)
 		if err != nil {
 			log.Println("load cmd from [", cmdFileName, "] failed,err:", err)
 			continue

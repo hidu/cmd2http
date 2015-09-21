@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html ng-app>
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="duwei">
+<meta name="src" content="https://github.com/hidu/cmd2http">
+<title>cmd2http</title>
+<script src="/res/js/jquery.js"></script>
+<script src="/res/js/angular/angular.min.js"></script>
+<link type="text/css" rel="stylesheet" href="/res/js/angular/angular-csp.css">
+</head>
+<body>
+  <div id="header">
+       <div class='right'>cmd2http:{{.version}}</div>
+       <div class='left'><h1>{{.title}}</h1></div>
+        <div class='left' style='padding-left:20px'>{{.intro}}</div>
+        <div class="c"></div>
+  </div>
+  <div id="content">
+     <div ng-view></div>
+  </div>
+</body>
+</html>

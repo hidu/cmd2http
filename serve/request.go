@@ -13,10 +13,10 @@ import (
 	"time"
 )
 
-type Request struct {
+type request struct {
 	writer    http.ResponseWriter
 	req       *http.Request
-	req_path  string
+	reqPath   string
 	cmd2      *Cmd2HttpServe
 	startTime time.Time
 	logInfo   []string
@@ -27,12 +27,12 @@ type Request struct {
 	cmdEnv    map[string]string
 }
 
-func (req *Request) Deal() {
+func (req *request) Deal() {
 	req.startTime = time.Now()
 	req.logInfo = make([]string, 0, 20)
-	req.req_path = strings.Trim(req.req.URL.Path, "/")
+	req.reqPath = strings.Trim(req.req.URL.Path, "/")
 
-	//    fmt.Println("path:",req.req_path)
+	//    fmt.Println("path:",req.reqPath)
 
 	req.log(req.req.RemoteAddr, req.req.RequestURI)
 	defer req.Close()
@@ -43,7 +43,7 @@ func (req *Request) Deal() {
 	req.tryExecCmd()
 }
 
-func (req *Request) log(infos ...string) {
+func (req *request) log(infos ...string) {
 	for _, _info := range infos {
 		_info = strings.TrimSpace(_info)
 		if _info != "" {
@@ -52,25 +52,25 @@ func (req *Request) log(infos ...string) {
 	}
 }
 
-func (req *Request) Close() {
+func (req *request) Close() {
 	used := fmt.Sprintf("time_use:%.3fms", float64(time.Now().Sub(req.startTime).Nanoseconds())/1000000.0)
 	log.Println(strings.Join(req.logInfo, " "), used)
 	//    fmt.Println(len(req.logInfo),req.logInfo)
 }
 
-func (req *Request) handleStatic() {
-	if req.req_path == "" {
+func (req *request) handleStatic() {
+	if req.reqPath == "" {
 		if IsFileExists("./s/index.html") {
 			http.Redirect(req.writer, req.req, "/s/", 302)
 		} else {
-			req.cmd2.myHandler_help(req.writer, req.req)
+			req.cmd2.myHandlerHelp(req.writer, req.req)
 		}
 		req.stop = true
 	}
 }
 
-func (req *Request) tryExecCmd() {
-	conf, has := req.cmd2.config.Cmds[req.req_path]
+func (req *request) tryExecCmd() {
+	conf, has := req.cmd2.config.Cmds[req.reqPath]
 	if !has {
 		req.log("status:404")
 		req.writer.WriteHeader(404)
@@ -81,7 +81,7 @@ func (req *Request) tryExecCmd() {
 	args := make([]string, len(conf.paramsAll))
 	env := make(map[string]string)
 
-	_param_prefix := "c2h_form_"
+	_paramPrefix := "c2h_form_"
 
 	for i, _param := range conf.paramsAll {
 		if !_param.isValParam {
@@ -93,10 +93,10 @@ func (req *Request) tryExecCmd() {
 			val = _param.DefaultValue
 		}
 		args[i] = val
-		env[_param_prefix+_param.Name] = val
+		env[_paramPrefix+_param.Name] = val
 	}
 	for k, v := range req.req.Form {
-		_key := _param_prefix + k
+		_key := _paramPrefix + k
 		_, has := env[_key]
 		if !has {
 			env[_key] = strings.Join(v, "\t")
@@ -106,16 +106,16 @@ func (req *Request) tryExecCmd() {
 	req.cmdArgs = args
 	req.cmdEnv = env
 
-	use_cache := req.req.FormValue("cache")
+	useCache := req.req.FormValue("cache")
 	//      fmt.Println("conf.cache_life",conf.cache_life)
-	if use_cache != "no" && conf.CacheLife > 3 {
+	if useCache != "no" && conf.CacheLife > 3 {
 		req.cacheKey = GetCacheKey(conf.CmdRaw, args)
 		//          log.Println("cache_key:",cacheKey)
-		cache_has, cache_data := req.cmd2.Cache.Get(req.cacheKey)
-		if cache_has {
+		cacheHas, cacheData := req.cmd2.Cache.Get(req.cacheKey)
+		if cacheHas {
 			req.log("cache hit")
 			req.writer.Header().Add("cache_hit", "1")
-			req.sendResponse(string(cache_data))
+			req.sendResponse(string(cacheData))
 			return
 		}
 	}
@@ -124,7 +124,7 @@ func (req *Request) tryExecCmd() {
 	req.exec()
 }
 
-func (req *Request) exec() {
+func (req *request) exec() {
 	conf := req.cmdConf
 	cmd := exec.Command(conf.Cmd, req.cmdArgs...)
 	//when use cache,disable the env params
@@ -146,8 +146,8 @@ func (req *Request) exec() {
 		req.log("error:" + err.Error())
 		req.writer.WriteHeader(500)
 		fmt.Fprintf(req.writer, err.Error()+"\n")
-		for arg_i, arg_v := range req.cmdArgs {
-			fmt.Fprintf(req.writer, "arg_%d:%s\n", arg_i, arg_v)
+		for argI, argV := range req.cmdArgs {
+			fmt.Fprintf(req.writer, "arg_%d:%s\n", argI, argV)
 		}
 		return
 	}
@@ -178,9 +178,9 @@ func (req *Request) exec() {
 	case <-done:
 	}
 	if isResonseOk {
-		cmd_status := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		exit_status := fmt.Sprintf(" [status:%d]", cmd_status.ExitStatus())
-		req.log(exit_status)
+		cmdStatus := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		exitStatus := fmt.Sprintf(" [status:%d]", cmdStatus.ExitStatus())
+		req.log(exitStatus)
 	}
 
 	if !isResonseOk || !cmd.ProcessState.Success() {
@@ -201,11 +201,11 @@ func (req *Request) exec() {
 	req.sendResponse(out.String())
 }
 
-var tpl_html string = `<!DOCTYPE html><html><head>
+var tplHTML = `<!DOCTYPE html><html><head>
          <meta http-equiv='Content-Type' content='text/html; charset=%s' />
           <title>%s cmd2http</title></head><body><pre>%s</pre></body></html>`
 
-func (req *Request) sendResponse(outStr string) {
+func (req *request) sendResponse(outStr string) {
 	format := req.req.FormValue("format")
 
 	req.log(fmt.Sprintf("resLen:%d ", len(outStr)))
@@ -220,10 +220,7 @@ func (req *Request) sendResponse(outStr string) {
 	if format == "" || format == "html" {
 		w.Header().Set("Content-Type", "text/html;charset="+charset)
 		if format == "" {
-			fmt.Fprintf(w, tpl_html,
-				charset,
-				conf.Name,
-				html.EscapeString(outStr))
+			fmt.Fprintf(w, tplHTML, charset, conf.Name, html.EscapeString(outStr))
 		} else {
 			w.Write([]byte(outStr))
 			if req.req.Referer() != "" {
@@ -234,7 +231,7 @@ func (req *Request) sendResponse(outStr string) {
 		w.Header().Set("Content-Type", "text/javascript;charset="+charset)
 		cb := r.FormValue("cb")
 		if cb == "" {
-			cb = fmt.Sprintf("form_%s_jsonp", req.req_path)
+			cb = fmt.Sprintf("form_%s_jsonp", req.reqPath)
 		}
 		m := make(map[string]string)
 		m["data"] = outStr

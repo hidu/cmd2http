@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// Cmd2HttpServe server struct
 type Cmd2HttpServe struct {
 	logFile   *os.File
 	logPath   string
@@ -17,25 +18,29 @@ type Cmd2HttpServe struct {
 	cacheAble bool
 }
 
-var version string = GetVersion()
+var version = GetVersion()
 
+// NewCmd2HTTPServe load cmd server
 func NewCmd2HTTPServe(confPath string) *Cmd2HttpServe {
 	server := new(Cmd2HttpServe)
 	server.config = loadConfig(confPath)
 	return server
 }
 
+// SetPort set cmd server http port
 func (cmd2 *Cmd2HttpServe) SetPort(port int) {
 	cmd2.config.Port = port
 }
+
+// Run start http server
 func (cmd2 *Cmd2HttpServe) Run() {
 	cmd2.setupCache()
 
 	http.Handle("/s/", http.FileServer(http.Dir("./")))
 	http.Handle("/res/", Assest.HTTPHandler("/"))
 	http.Handle("/favicon.ico", Assest.FileHandlerFunc("/res/css/favicon.ico"))
-	http.HandleFunc("/help", cmd2.myHandler_help)
-	http.HandleFunc("/", cmd2.myHandler_root)
+	http.HandleFunc("/help", cmd2.myHandlerHelp)
+	http.HandleFunc("/", cmd2.myHandlerRoot)
 
 	addr := fmt.Sprintf(":%d", cmd2.config.Port)
 	log.Println("listen at", addr)

@@ -9,20 +9,24 @@ import (
 	"strings"
 )
 
+// GetVersion get version str
 func GetVersion() string {
 	return strings.TrimSpace(string(LoadRes("res/version")))
 }
 
+// IsFileExists check file exists
 func IsFileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
+// LoadRes get data as []byte
 func LoadRes(path string) []byte {
 	return []byte(Assest.GetContent(path))
 }
 
-func In_array(item string, arr []string) bool {
+// InArray lick php func in_array
+func InArray(item string, arr []string) bool {
 	for _, a := range arr {
 		if a == item {
 			return true
@@ -31,15 +35,17 @@ func In_array(item string, arr []string) bool {
 	return false
 }
 
+// GetCacheKey get cache key
 func GetCacheKey(cmd string, params []string) string {
 	return cmd + "|||" + strings.Join(params, "&")
 }
 
-func LoadParamValuesFromFile(file_path string) (values []string) {
-	if !IsFileExists(file_path) {
+// LoadParamValuesFromFile load values file as  slice
+func LoadParamValuesFromFile(filePath string) (values []string) {
+	if !IsFileExists(filePath) {
 		return
 	}
-	bf, err := utils.File_get_contents(file_path)
+	bf, err := utils.File_get_contents(filePath)
 	if err != nil {
 		return
 	}
@@ -54,7 +60,7 @@ func LoadParamValuesFromFile(file_path string) (values []string) {
 	return
 }
 
-func loadJsonFile(jsonPath string, val interface{}) error {
+func loadJSONFile(jsonPath string, val interface{}) error {
 	bs, err := ioutil.ReadFile(jsonPath)
 	if err != nil {
 		return err
@@ -63,7 +69,7 @@ func loadJsonFile(jsonPath string, val interface{}) error {
 	var bf bytes.Buffer
 	for _, line := range lines {
 		lineNew := strings.TrimSpace(line)
-		if lineNew[0] == '#' || (len(lineNew) > 1 && lineNew[0:2] == "//") {
+		if (len(lineNew) > 0 && lineNew[0] == '#') || (len(lineNew) > 1 && lineNew[0:2] == "//") {
 			continue
 		}
 		bf.WriteString(lineNew)
