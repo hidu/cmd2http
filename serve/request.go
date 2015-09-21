@@ -69,6 +69,8 @@ func (req *request) handleStatic() {
 	}
 }
 
+var _paramPrefix = "c2h_form_"
+
 func (req *request) tryExecCmd() {
 	conf, has := req.cmd2.config.Cmds[req.reqPath]
 	if !has {
@@ -80,8 +82,6 @@ func (req *request) tryExecCmd() {
 
 	args := make([]string, len(conf.paramsAll))
 	env := make(map[string]string)
-
-	_paramPrefix := "c2h_form_"
 
 	for i, _param := range conf.paramsAll {
 		if !_param.isValParam {

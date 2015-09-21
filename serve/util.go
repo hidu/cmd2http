@@ -11,7 +11,7 @@ import (
 
 // GetVersion get version str
 func GetVersion() string {
-	return strings.TrimSpace(string(LoadRes("res/version")))
+	return Assest.GetContent("res/version")
 }
 
 // IsFileExists check file exists

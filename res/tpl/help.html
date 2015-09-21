@@ -117,6 +117,13 @@
   </div>
   <div id="footer">
   &copy;<a href="https://github.com/hidu/cmd2http" target="_blank">github.com/hidu/cmd2http</a>
+  <br/><div id="new_version_slot">&nbsp;</div><br/>
   </div>
+  <script>
+var cmd2http_version="{{.version}}";
+setTimeout(function(){
+  $.getScript("https://hidu.github.io/cmd2http/check.js");
+},1000);
+</script>
 </body>
 </html>

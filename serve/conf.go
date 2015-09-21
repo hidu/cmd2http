@@ -159,6 +159,9 @@ func loadConfig(confPath string) (serConf *serverConf) {
 			log.Println("load cmd from [", cmdFileName, "] failed,err:", err)
 			continue
 		}
+		if cmd.Charsetlist == nil {
+			cmd.Charsetlist = serConf.CharsetList
+		}
 		cmdName := cmdFileName[:len(cmdFileName)-5]
 		log.Println("load cmd [", cmdName, "] from [", cmdFileName, "],success")
 		serConf.Cmds[cmdName] = cmd
