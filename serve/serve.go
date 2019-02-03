@@ -2,8 +2,9 @@ package serve
 
 import (
 	"fmt"
-	"github.com/hidu/goutils"
 	"github.com/hidu/goutils/cache"
+	"github.com/hidu/goutils/fs"
+	"github.com/hidu/goutils/time_util"
 	"log"
 	"net/http"
 	"os"
@@ -57,8 +58,8 @@ func (cmd2 *Cmd2HttpServe) setupLog() {
 	cmd2.logFile, _ = os.OpenFile(cmd2.logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	log.SetOutput(cmd2.logFile)
 
-	utils.SetInterval(func() {
-		if !utils.File_exists(cmd2.logPath) {
+	time_util.SetInterval(func() {
+		if !fs.FileExists(cmd2.logPath) {
 			cmd2.logFile.Close()
 			cmd2.logFile, _ = os.OpenFile(cmd2.logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 			log.SetOutput(cmd2.logFile)

@@ -2,7 +2,7 @@ package serve
 
 import (
 	"fmt"
-	"github.com/hidu/goutils"
+	"github.com/hidu/goutils/html_util"
 	"net/http"
 	"regexp"
 	"sort"
@@ -52,7 +52,7 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
 				if len(_paramValues) == 0 {
 					tabsBd += "<input class='r-text p_" + _param.Name + "' type='text' name='" + _param.Name + "' " + placeholder + ">"
 				} else {
-					options := utils.NewHtml_Options()
+					options := html_util.NewHtml_Options()
 					for _, _v := range _paramValues {
 						_optionKey := _v
 						_optionVal := _v
@@ -63,7 +63,7 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
 						}
 						options.AddOption(_optionKey, _optionVal, _param.DefaultValue == _optionKey)
 					}
-					tabsBd += utils.Html_select(_param.Name, options, "class='r-select p_"+_param.Name+"'", placeholder)
+					tabsBd += html_util.Html_select(_param.Name, options, "class='r-select p_"+_param.Name+"'", placeholder)
 					tabsBd += "</select>\n"
 				}
 				tabsBd += "</li>\n"

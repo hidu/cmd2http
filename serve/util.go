@@ -3,7 +3,7 @@ package serve
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/hidu/goutils"
+	"github.com/hidu/goutils/fs"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -45,7 +45,7 @@ func LoadParamValuesFromFile(filePath string) (values []string) {
 	if !IsFileExists(filePath) {
 		return
 	}
-	bf, err := utils.File_get_contents(filePath)
+	bf, err := fs.FileGetContents(filePath)
 	if err != nil {
 		return
 	}
