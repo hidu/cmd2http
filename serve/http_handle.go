@@ -2,12 +2,13 @@ package serve
 
 import (
 	"fmt"
-	"github.com/hidu/goutils/html_util"
 	"net/http"
 	"regexp"
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/hidu/goutils/html_util"
 )
 
 var htmls = make(map[string]string)

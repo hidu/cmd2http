@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/hidu/cmd2http/serve"
 	"os"
+
+	"github.com/hidu/cmd2http/serve"
 )
 
 var configPath = flag.String("conf", "./conf/cmd2http.json", "json config file")
@@ -19,6 +20,8 @@ func main() {
 	}
 	server.Run()
 }
+
+//aaa
 func init() {
 	df := flag.Usage
 
