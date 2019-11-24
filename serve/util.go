@@ -3,10 +3,11 @@ package serve
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/hidu/goutils/fs"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/hidu/goutils/fs"
 )
 
 // GetVersion get version str
