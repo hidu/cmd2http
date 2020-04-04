@@ -127,7 +127,7 @@ func (req *request) tryExecCmd() {
 func (req *request) exec() {
 	conf := req.cmdConf
 	cmd := exec.Command(conf.Cmd, req.cmdArgs...)
-	//when use cache,disable the env params
+	// when use cache,disable the env params
 	env := syscall.Environ()
 	if conf.CacheLife < 3 {
 		for k, v := range req.cmdEnv {

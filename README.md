@@ -1,26 +1,24 @@
 cmd2http
 =========
 convert system command as http service  
-将cli程序(系统命令、脚本等)转换为http服务  
-当前版本：0.2.1  
+将cli程序(系统命令、脚本等)转换为HTTP服务  
 
 
-##install
-安装了golang的用户:  
-> go get -u github.com/hidu/cmd2http
+## Install
+```
+go get -u github.com/hidu/cmd2http
+```
 
-或者下载编译二进制： <http://pan.baidu.com/s/1bnkyWLD#path=%252Fcmd2http>  
-
-##运行
+## Run
 ```
 ./cmd2http -conf=./example/conf/cmd2http.json
 ```
 
-访问首页: <http://localhost:8080/>  
+访问首页: <http://localhost:8310/>  
 
 **hello world demo:**  
 ```
-          url : http://localhost:8080/echo?wd=hello&a=world
+          url : http://localhost:8310/echo?wd=hello&a=world
 command exec : <b>echo -n hello world defaultValue</b>  
        config : <b>echo -n $wd $a $b|defaultValue </b>  
 ```
@@ -51,7 +49,7 @@ command exec : <b>echo -n hello world defaultValue</b>
 ```
 
 ###主配置文件(cmd2http.json)
-```javascript
+```json
 {
    "port":8310,
    "title":"default title",
@@ -61,7 +59,7 @@ command exec : <b>echo -n hello world defaultValue</b>
    "charset":"utf-8",
    "charset_list": [
         "gbk",
-        "utf-8",
+        "utf-8"
     ],
    "cmds":{
       "pwd":{
@@ -91,7 +89,7 @@ command exec : <b>echo -n hello world defaultValue</b>
 
 ###命令配置文件(json)
 ls.json内容为：
-```javascript
+```json
 {
     "cmd": "../cmds/ls.sh a $a b $b $c $d|你好",
     "intro": "hello",
@@ -101,7 +99,7 @@ ls.json内容为：
     "charset":"utf-8",
    "charset_list": [
         "gbk",
-        "utf-8",
+        "utf-8"
     ],
     "params": {
         "c": {

@@ -1,5 +1,7 @@
 package main
 
+//go:generate goasset asset.json
+
 import (
 	"flag"
 	"fmt"
@@ -21,12 +23,12 @@ func main() {
 	server.Run()
 }
 
-//aaa
+// aaa
 func init() {
 	df := flag.Usage
 
 	flag.Usage = func() {
 		df()
-		fmt.Fprintln(os.Stderr, "\n convert system command as http service\n https://github.com/hidu/cmd2http/\n")
+		fmt.Fprintf(os.Stderr, "\n convert system command as http service\n https://github.com/hidu/cmd2http/\n")
 	}
 }

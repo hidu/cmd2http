@@ -1,5 +1,5 @@
 {
   "src":"res",
-  "dest":"serve/assest.go",
+  "dest":"serve/asset.go",
   "package":"serve"
 }

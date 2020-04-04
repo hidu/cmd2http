@@ -20,20 +20,20 @@ type serverConf struct {
 	Cmds        map[string]*cmdItem `json:"cmds"`
 	LogPath     string              `json:"log_path"`
 	CacheDir    string              `json:"cache_dir"`
-	confPath    string              `json:"-"`
+	confPath    string
 }
 type cmdItem struct {
-	Name        string               `json:"-"`
-	CmdRaw      string               `json:"cmd"`
-	Cmd         string               `json:"-"`
-	Charset     string               `json:"charset"`
-	paramsAll   []*cmdParam          `json:"-"`
-	Params      map[string]*cmdParam `json:"params"`
-	Intro       string               `json:"intro"`
-	Timeout     int                  `json:"timeout"`
-	Charsetlist []string             `json:"charset_list"`
-	Group       string               `json:"group"`
-	CacheLife   int64                `json:"cache_life"`
+	Name      string `json:"-"`
+	CmdRaw    string `json:"cmd"`
+	Cmd       string `json:"-"`
+	Charset   string `json:"charset"`
+	paramsAll []*cmdParam
+	Params    map[string]*cmdParam `json:"params"`
+	Intro     string               `json:"intro"`
+	Timeout   int                  `json:"timeout"`
+	Charsets  []string             `json:"charset_list"`
+	Group     string               `json:"group"`
+	CacheLife int64                `json:"cache_life"`
 }
 
 func (c *cmdItem) String() string {
@@ -55,7 +55,7 @@ type cmdParam struct {
 }
 
 func (p *cmdParam) ToString() string {
-	return fmt.Sprintf("name:%s,default:%s,isValParam:%x", p.Name, p.DefaultValue, p.isValParam)
+	return fmt.Sprintf("name:%s,default:%s,isValParam:%v", p.Name, p.DefaultValue, p.isValParam)
 }
 
 func (p *cmdParam) getValues() []string {
@@ -81,19 +81,19 @@ func (conf *serverConf) parse() {
 		if cmdConf.Timeout < 1 {
 			cmdConf.Timeout = 30
 		}
-		if cmdConf.Charsetlist == nil {
-			cmdConf.Charsetlist = make([]string, 0)
+		if cmdConf.Charsets == nil {
+			cmdConf.Charsets = make([]string, 0)
 		}
 		if cmdConf.Params == nil {
 			cmdConf.Params = make(map[string]*cmdParam)
 		}
 		cmdConf.CmdRaw = strings.TrimSpace(cmdConf.CmdRaw)
 
-		//cmd eg  echo -n $wd|你好 $a $b
+		// cmd eg  echo -n $wd|你好 $a $b
 		ps := regexp.MustCompile(`\s+`).Split(cmdConf.CmdRaw, -1)
 		//       fmt.Println(ps)
 		cmdConf.Cmd = ps[0]
-		//@todo
+		// @todo
 		for i := 1; i < len(ps); i++ {
 			item := ps[i]
 			//           fmt.Println("i:",i,item)
@@ -159,8 +159,8 @@ func loadConfig(confPath string) (serConf *serverConf) {
 			log.Println("load cmd from [", cmdFileName, "] failed,err:", err)
 			continue
 		}
-		if cmd.Charsetlist == nil {
-			cmd.Charsetlist = serConf.CharsetList
+		if cmd.Charsets == nil {
+			cmd.Charsets = serConf.CharsetList
 		}
 		cmdName := cmdFileName[:len(cmdFileName)-5]
 		log.Println("load cmd [", cmdName, "] from [", cmdFileName, "],success")

@@ -14,9 +14,9 @@ import (
 var htmls = make(map[string]string)
 
 func (cmd2 *Cmd2HttpServe) helpPageCreate() {
-	//	if _, has := htmls["body"]; has {
-	//		return
-	//	}
+	// 	if _, has := htmls["body"]; has {
+	// 		return
+	// 	}
 	tabsBd := "<div class='bd'>"
 	groups := make(map[string][]string)
 
@@ -76,9 +76,9 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
 			           <option value='plain'>plain</option>
 			           <option value='jsonp'>jsonp</option>
 			           </select></li>`
-		if len(_conf.Charsetlist) > 1 && _conf.Charset != "null" {
+		if len(_conf.Charsets) > 1 && _conf.Charset != "null" {
 			tabsBd += "<li>charset:<select name='charset'>"
-			for _, _charset := range _conf.Charsetlist {
+			for _, _charset := range _conf.Charsets {
 				_selected := ""
 				if _charset == _conf.Charset {
 					_selected = "selected=selected"
@@ -144,7 +144,7 @@ func (cmd2 *Cmd2HttpServe) myHandlerHelp(w http.ResponseWriter, r *http.Request)
 	tabsStr += htmls["body"]
 	reg := regexp.MustCompile(`\s+`)
 	tabsStr = reg.ReplaceAllString(tabsStr, " ")
-	str := Assest.GetContent("res/tpl/help.html")
+	str := string(Asset.GetContent("res/tpl/help.html"))
 	str = reg.ReplaceAllString(str, " ")
 
 	tpl, _ := template.New("page").Parse(str)

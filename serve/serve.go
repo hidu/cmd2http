@@ -20,8 +20,6 @@ type Cmd2HttpServe struct {
 	cacheAble bool
 }
 
-var version = GetVersion()
-
 // NewCmd2HTTPServe load cmd server
 func NewCmd2HTTPServe(confPath string) *Cmd2HttpServe {
 	server := new(Cmd2HttpServe)
@@ -39,8 +37,8 @@ func (cmd2 *Cmd2HttpServe) Run() {
 	cmd2.setupCache()
 
 	http.Handle("/s/", http.FileServer(http.Dir("./")))
-	http.Handle("/res/", Assest.HTTPHandler("/"))
-	http.Handle("/favicon.ico", Assest.FileHandlerFunc("/res/css/favicon.ico"))
+	http.Handle("/res/", Asset.HTTPHandler("/"))
+	http.Handle("/favicon.ico", Asset.FileHandlerFunc("/res/css/favicon.ico"))
 	http.HandleFunc("/help", cmd2.myHandlerHelp)
 	http.HandleFunc("/", cmd2.myHandlerRoot)
 

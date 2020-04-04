@@ -10,11 +10,6 @@ import (
 	"github.com/hidu/goutils/fs"
 )
 
-// GetVersion get version str
-func GetVersion() string {
-	return Assest.GetContent("res/version")
-}
-
 // IsFileExists check file exists
 func IsFileExists(path string) bool {
 	_, err := os.Stat(path)
@@ -23,7 +18,7 @@ func IsFileExists(path string) bool {
 
 // LoadRes get data as []byte
 func LoadRes(path string) []byte {
-	return []byte(Assest.GetContent(path))
+	return Asset.GetContent(path)
 }
 
 // InArray lick php func in_array
