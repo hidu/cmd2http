@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -159,6 +160,48 @@ func (srv *Server) handlerHelp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) index(w http.ResponseWriter, r *http.Request) {
+	if !srv.checkAuth(w, r) {
+		return
+	}
+
 	req := request{writer: w, req: r, cmd2: srv}
 	req.Deal()
+}
+
+func (srv *Server) checkAuth(w http.ResponseWriter, r *http.Request) (ret bool) {
+	if srv.config.BasicAuth == "" {
+		return true
+	}
+	doLogin := func() {
+		w.Header().Set("WWW-authenticate", `Basic realm="need login"`)
+		w.Header().Set("Content-Type", "text/html;charset=utf-8")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("auth required"))
+	}
+	user, psw, ok := r.BasicAuth()
+
+	defer func() {
+		if ret {
+			return
+		}
+		log.Printf("login failed with user=%q psw=%q, RemoteAddr=%s\n", user, psw, r.RemoteAddr)
+	}()
+
+	if !ok {
+		doLogin()
+		return false
+	}
+	list := strings.Split(srv.config.BasicAuth, ";")
+	for _, item := range list {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		arr := strings.SplitN(item, ":", 2)
+		if arr[0] == user && arr[1] == psw {
+			return true
+		}
+	}
+	doLogin()
+	return false
 }

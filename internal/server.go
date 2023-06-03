@@ -27,6 +27,10 @@ func (srv *Server) SetPort(port int) {
 	srv.config.Port = port
 }
 
+func (srv *Server) SetBasicAuth(auth string) {
+	srv.config.BasicAuth = auth
+}
+
 // Run start http server
 func (srv *Server) Run() error {
 	static, err := fs.Sub(resourceWeb, "resource/static")

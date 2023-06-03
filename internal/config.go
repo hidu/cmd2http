@@ -17,12 +17,15 @@ type Config struct {
 	Port     int
 	Title    string
 	Intro    string
-	Timeout  int
+	Timeout  int // 超时时间，单位秒，默认 30s
 	Charsets []string
 	Commands map[string]*cmdConfig
 	LogPath  string
 	CacheDir string
-	confDir  string // 配置文件所在目录
+
+	BasicAuth string // 采用 Basic 认证的账号和密码，如 user:psw
+
+	confDir string // 配置文件所在目录
 }
 
 func (cfg *Config) getPort() int {
