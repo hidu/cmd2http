@@ -1,4 +1,4 @@
 {
-    "cmd": "../cmds/sleep.sh $n",
-    "timeout": 10
+    "Command": "../cmds/sleep.sh $n",
+    "Timeout": 10
 }

@@ -1,7 +1,7 @@
 {
-    "cmd": "../cmds/ls.sh a $a b $b $c $d|你好",
-    "intro": "hello",
-    "params": {
+    "Command": "../cmds/ls.sh a $a b $b $c $d|你好",
+    "Intro": "hello",
+    "Params": {
         "c": {
             "values": [
                 "1",

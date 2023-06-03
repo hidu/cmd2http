@@ -1,12 +1,12 @@
 {
-    "port": 8310,
-    "title": "default title",
-    "intro": "hello.world@example.com",
-    "timeout": 60,
-    "charset":"utf-8",
-    "charset_list": [
+    "Port": 8310,
+    "Title": "default title",
+    "Intro": "hello.world@example.com",
+    "Timeout": 60,
+    "Charset":"utf-8",
+    "CharsetList": [
         "utf-8"
     ],
-    "cache_dir": "./cache_data/",
-    "cmds": {}
+    "CacheDir": "./cache_data/",
+    "Cmds": {}
 }

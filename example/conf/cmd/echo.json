@@ -1,4 +1,4 @@
 {
-    "cmd": "date",
-    "cache": 10
+    "Command": "date",
+    "Cache": 10
 }

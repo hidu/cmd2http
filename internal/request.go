@@ -18,12 +18,12 @@ type request struct {
 	writer    http.ResponseWriter
 	req       *http.Request
 	reqPath   string
-	cmd2      *Cmd2HttpServe
+	cmd2      *Server
 	startTime time.Time
 	logInfo   []string
 	stop      bool
 	cacheKey  string
-	cmdConf   *cmdItem
+	cmdConf   *cmdConfig
 	cmdArgs   []string
 	cmdEnv    map[string]string
 }
@@ -63,7 +63,7 @@ func (req *request) handleStatic() {
 		if IsFileExists("./s/index.html") {
 			http.Redirect(req.writer, req.req, "/s/", http.StatusFound)
 		} else {
-			req.cmd2.myHandlerHelp(req.writer, req.req)
+			req.cmd2.handlerHelp(req.writer, req.req)
 		}
 		req.stop = true
 	}
@@ -72,7 +72,7 @@ func (req *request) handleStatic() {
 var _paramPrefix = "c2h_form_"
 
 func (req *request) tryExecCmd() {
-	conf, has := req.cmd2.config.Cmds[req.reqPath]
+	conf, has := req.cmd2.config.Commands[req.reqPath]
 	if !has {
 		req.log("status:404")
 		req.writer.WriteHeader(404)
@@ -116,7 +116,7 @@ func (req *request) tryExecCmd() {
 	useCache := req.req.FormValue("cache")
 	//      fmt.Println("conf.cache_life",conf.cache_life)
 	if useCache != "no" && conf.CacheLife > 3 {
-		req.cacheKey = GetCacheKey(conf.CmdRaw, args)
+		req.cacheKey = GetCacheKey(conf.Command, args)
 		//          log.Println("cache_key:",cacheKey)
 		cacheHas, cacheData := req.cmd2.Cache.Get(req.cacheKey)
 		if cacheHas {
@@ -131,10 +131,10 @@ func (req *request) tryExecCmd() {
 
 func (req *request) exec() {
 	conf := req.cmdConf
-
 	ctx, cancel := context.WithTimeout(req.req.Context(), conf.getTimeout())
 	defer cancel()
-	cmd := exec.CommandContext(ctx, conf.Cmd, req.cmdArgs...)
+	cmd := exec.CommandContext(ctx, conf.cmdName, req.cmdArgs...)
+	cmd.Dir = conf.confDir
 	log.Println("exec:", cmd.String())
 	// when use cache,disable the env params
 	env := os.Environ()
@@ -202,11 +202,11 @@ func (req *request) sendResponse(outStr string) {
 	if format == "" || format == "html" {
 		w.Header().Set("Content-Type", "text/html;charset="+charset)
 		if format == "" {
-			fmt.Fprintf(w, tplHTML, charset, conf.Name, html.EscapeString(outStr))
+			fmt.Fprintf(w, tplHTML, charset, conf.name, html.EscapeString(outStr))
 		} else {
 			w.Write([]byte(outStr))
 			if req.req.Referer() != "" {
-				w.Write([]byte("<script>window.postMessage && window.parent.postMessage('" + conf.Name + "_height_'+document.body.scrollHeight,'*')</script>"))
+				w.Write([]byte("<script>window.postMessage && window.parent.postMessage('" + conf.name + "_height_'+document.body.scrollHeight,'*')</script>"))
 			}
 		}
 	} else if format == "jsonp" {

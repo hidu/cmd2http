@@ -1,12 +1,11 @@
 cmd2http
 =========
-convert system command as http service  
-将cli程序(系统命令、脚本等)转换为HTTP服务  
+将 CLI 程序(系统命令、脚本等)转换为 HTTP 服务  
 
 
 ## Install
 ```
-go get -u github.com/hidu/cmd2http
+go install github.com/hidu/cmd2http@master
 ```
 
 ## Run
@@ -14,13 +13,13 @@ go get -u github.com/hidu/cmd2http
 ./cmd2http -conf=./example/conf/cmd2http.json
 ```
 
-访问首页: <http://localhost:8310/>  
+访问首页: http://localhost:8310/
 
 **hello world demo:**  
 ```
-          url : http://localhost:8310/echo?wd=hello&a=world
-command exec : <b>echo -n hello world defaultValue</b>  
-       config : <b>echo -n $wd $a $b|defaultValue </b>  
+           URL : http://localhost:8310/echo?wd=hello&a=world
+Command Config : <b>echo -n $wd $a $b|defaultValue </b>  
+Command   Exec : <b>echo -n hello world defaultValue</b>  
 ```
 
 ##配置说明
@@ -51,57 +50,57 @@ command exec : <b>echo -n hello world defaultValue</b>
 ###主配置文件(cmd2http.json)
 ```json
 {
-   "port":8310,
-   "title":"default title",
-   "intro":"intro info",
-   "timeout":30,
-   "cache_dir":"../cache_data/",
-   "charset":"utf-8",
-   "charset_list": [
+   "Port":8310,
+   "Title":"default title",
+   "Intro":"intro info",
+   "Timeout":30,
+   "CacheDir":"../cache_data/",
+   "Charset":"utf-8",
+   "Charsets": [
         "gbk",
         "utf-8"
     ],
-   "cmds":{
+   "Commands":{
       "pwd":{
-          "cmd":"pwd",
-          "intro":"cmd intor",
-          "timeout":10
+          "Command":"pwd",
+          "Intro":"cmd intor",
+          "Timeout":10
        },
       "echo":{
-         "cmd":"echo -n $wd|你好 $a $b",
-         "cache":120
+         "Command":"echo -n $wd|你好 $a $b",
+         "Cache":120
         }
    }
 }
 ```
-命令配置(cmds)(如上的pwd，echo)也可以配置到单独的文件，位于上述配置文件(cmd2http.json)目录下的cmd目录下去。  
-程序在运行的时候，会自动`Chdir`到配置文件 `cmd2http.json`的目录下去。  
+命令配置(Commands)(如上的pwd，echo)也可以配置到单独的文件，位于上述配置文件(cmd2http.json)目录下的cmd目录下去。  
+
 所以在配置文件中写的路径都使用以此为基准目录的相对路径即可。 
 
 配置项说明： 
-*   port      : http 服务监听端口
-*   title     : http 页面标题
-*   intro     : 介绍
-*   timeout   : 默认的运行超时时间
-*   cache_dir : 运行cache存放的目录（单项命令中配置了cache项后生效）
-*   charset    :   全局默认的编码，只用于html页面结果展现
-*   charset_list : 全局默认的编码可选值，只用于html页面结果展现
+*   Port      : http 服务监听端口
+*   Title     : http 页面标题
+*   Intro     : 介绍
+*   Timeout   : 默认的运行超时时间
+*   CacheDir  : 运行cache存放的目录（单项命令中配置了cache项后生效）
+*   Charset   : 全局默认的编码，只用于html页面结果展现
+*   Charsets  : 全局默认的编码可选值，只用于html页面结果展现
 
 ###命令配置文件(json)
 ls.json内容为：
 ```json
 {
-    "cmd": "../cmds/ls.sh a $a b $b $c $d|你好",
-    "intro": "hello",
-    "timeout": 3,
-    "cache": 1800,
-    "group": "分组1",
-    "charset":"utf-8",
-   "charset_list": [
+    "Command": "../cmds/ls.sh a $a b $b $c $d|你好",
+    "Intro": "hello",
+    "Timeout": 3,
+    "Cache": 1800,
+    "Group": "分组1",
+    "Charset":"utf-8",
+   "Charsets": [
         "gbk",
         "utf-8"
     ],
-    "params": {
+    "Params": {
         "c": {
             "values": ["1","2","3" ],
             "html": "style='width:200px'"
@@ -113,22 +112,22 @@ ls.json内容为：
 }
 ```
 配置项说明：  
-*  cmd   :  待运行的命令，参数使用`$`前缀，如 `$a`,`$a1`,`$a_1`  
-*  intro : 介绍
-*  timeout : 当前命令的运行超时时间，若没有设置或者为0 则使用全局的 timeout
-*  cache : 运行结果cache有效期，单位秒，为0 或者全局的cache_dir没有设置的时候不使用cache
-*  params : 参数配置
-*  params.c : 参数 `$c`的配置项
-*  params.c.values : 参数 `$c`的可选值，用来在form表单中展现，只能是字符串,values有值的情况下使用select展现样式，否则为input=text
-*  params.c.html : 参数 `$c`的form控件额外的 html代码块
-*  params.c.values_file : 参数 `$c`的可选值录入文件(eg:[可选值示例文件](./example/data/ls_d.csv))
-*  charset    :   默认的编码，只用于html页面结果展现
-*  charset_list : 默认的编码可选值，只用于html页面结果展现
-*  group     :  页面展现分组，默认为`default`
+*  Command   :  待运行的命令，参数使用`$`前缀，如 `$a`,`$a1`,`$a_1`  
+*  Intro : 介绍
+*  Timeout : 当前命令的运行超时时间，若没有设置或者为0 则使用全局的 timeout
+*  Cache : 运行结果cache有效期，单位秒，为0 或者全局的cache_dir没有设置的时候不使用cache
+*  Params : 参数配置
+*  Params.c : 参数 `$c`的配置项
+*  Params.c.values : 参数 `$c`的可选值，用来在form表单中展现，只能是字符串,values 有值的情况下使用select展现样式，否则为input=text
+*  Params.c.html : 参数 `$c`的form控件额外的 html代码块
+*  Params.c.values_file : 参数 `$c`的可选值录入文件(eg:[可选值示例文件](./example/data/ls_d.csv))
+*  Charset    : 默认的编码，只用于 HTML 页面结果展现
+*  Charsets   : 默认的编码可选值，只用于html页面结果展现
+*  Group     :  页面展现分组，默认为`default`
 
 ###命令如何读取参数
 ```
-"cmd": "../cmds/ls.sh a $a b $b $c $d|你好"
+"Command": "../cmds/ls.sh a $a b $b $c $d|你好"
 ```
 如上，命令中定义了很多参数，`ls.sh`一共可以读取到6个参数，其中 字符串`a`,`b` 是固定的，`$a $b $c $d` 这几个则可以从http接口读取到。  
 `$d|你好` 表示当http接口读取到的值为空时的默认值。  

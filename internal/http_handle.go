@@ -3,9 +3,9 @@ package internal
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/hidu/goutils/html_util"
@@ -13,31 +13,43 @@ import (
 
 var htmls = make(map[string]string)
 
-func (cmd2 *Cmd2HttpServe) helpPageCreate() {
-	// 	if _, has := htmls["body"]; has {
-	// 		return
-	// 	}
-	tabsBd := "<div class='bd'>"
-	groups := make(map[string][]string)
+const formatLi = `
+<li>format:<select name='format'>
+	<option value=''>default</option>
+	<option value='html'>html</option>
+	<option value='plain'>plain</option>
+	<option value='jsonp'>jsonp</option>
+	</select>
+</li>`
 
-	for name, _conf := range cmd2.config.Cmds {
-		if _, _has := groups[_conf.Group]; !_has {
-			groups[_conf.Group] = []string{}
-		}
-		groups[_conf.Group] = append(groups[_conf.Group], name)
+const cacheLiTPL = `
+<li>cache:
+<select name='cache'>
+  <option value='yes'>yes(%ds)</option>
+  <option value='no'>no</option>
+</select>
+</li>`
+
+func (srv *Server) helpPageCreate() {
+	tabsBd := "<div class='bd'>"
+	groups := make(map[string][]string, len(srv.config.Commands))
+
+	for name, item := range srv.config.Commands {
+		groupName := item.getGroup()
+		groups[groupName] = append(groups[groupName], name)
 
 		tabsBd += "\n\n<div class='cmd_div' id='div_" + name + "' style='display:none'>\n"
 		_formStr := ` <form action='/%s' methor='get' onsubmit='return form_check(this,"%s")' id='form_%s'>`
 		tabsBd += fmt.Sprintf(_formStr, name, name, name)
-		tabsBd += "<div class='note note-g'><div><b>uri</b> :&nbsp;/" + name + "</div>" +
-			"<div><b>command</b> :&nbsp;[&nbsp;" + _conf.CmdRaw +
-			"&nbsp;]&nbsp;<b>timeout</b> :&nbsp;" + fmt.Sprintf("%d", _conf.Timeout) + "s</div>"
-		if _conf.Intro != "" {
-			tabsBd = tabsBd + "<div><b>intro</b> :&nbsp;&nbsp;" + _conf.Intro + "</div>"
+		tabsBd += "<div class='note note-g'><div><b>URI</b> :&nbsp;/" + name + "</div>" +
+			"<div><b>Command</b> :&nbsp;[&nbsp;" + item.Command +
+			"&nbsp;]&nbsp;<b>Timeout</b> :&nbsp;" + fmt.Sprintf("%.1f", item.getTimeout().Seconds()) + "s</div>"
+		if item.Intro != "" {
+			tabsBd = tabsBd + "<div><b>Intro</b> :&nbsp;&nbsp;" + item.Intro + "</div>"
 		}
 		tabsBd = tabsBd + "</div>"
 		tabsBd = tabsBd + "<fieldset><ul class='ul-1'>"
-		for _, _param := range _conf.paramsAll {
+		for _, _param := range item.paramsAll {
 			if _param.isValParam && _param.Name != "charset" && _param.Name != "format" {
 				placeholder := ""
 				if _param.DefaultValue != "" {
@@ -70,32 +82,21 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
 				tabsBd += "</li>\n"
 			}
 		}
-		tabsBd += `<li>format:<select name='format'>
-			           <option value=''>default</option>
-			           <option value='html'>html</option>
-			           <option value='plain'>plain</option>
-			           <option value='jsonp'>jsonp</option>
-			           </select></li>`
-		if len(_conf.Charsets) > 1 && _conf.Charset != "null" {
+		tabsBd += formatLi
+		chs := item.getCharsets()
+		if len(chs) > 1 && item.Charset != "null" {
 			tabsBd += "<li>charset:<select name='charset'>"
-			for _, _charset := range _conf.Charsets {
-				_selected := ""
-				if _charset == _conf.Charset {
-					_selected = "selected=selected"
+			for _, charset := range chs {
+				var selected string
+				if charset == item.Charset {
+					selected = "selected=selected"
 				}
-				tabsBd += "<option value='" + _charset + "' " + _selected + ">" + _charset + "</option>"
+				tabsBd += "<option value='" + charset + "' " + selected + ">" + charset + "</option>"
 			}
 			tabsBd += "</select></li>\n"
 		}
-		if _conf.CacheLife > 3 && cmd2.cacheAble {
-			_cacheLiStr := `
-                  <li>cache:
-                  <select name='cache'>
-	                  <option value='yes'>yes(%ds)</option>
-	                  <option value='no'>no</option>
-                  </select>
-                  </li>`
-			tabsBd += fmt.Sprintf(_cacheLiStr, _conf.CacheLife)
+		if item.CacheLife > 3 && srv.cacheAble() {
+			tabsBd += fmt.Sprintf(cacheLiTPL, item.CacheLife)
 		}
 
 		tabsBd += `</ul><div class='c'></div>
@@ -106,7 +107,7 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
             </center>
            </fieldset><br/>
             <div class='div_url'></div>
-            <iframe id='ifr_` + _conf.Name + `' src='about:_blank' style='border:none;width:99%;height:20px' onload='ifr_load(this)'></iframe>
+            <iframe id='ifr_` + item.name + `' src='about:_blank' style='border:none;width:99%;height:20px' onload='ifr_load(this)'></iframe>
             <div class='result'></div>
             </form>
             </div>`
@@ -115,7 +116,7 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
 	tabsStr := tabsBd + "\n</div>"
 
 	contentMenu := "<dl id='main_menu'>"
-	groupNames := cmd2.config.groups()
+	groupNames := srv.config.groups()
 	for _, groupName := range groupNames {
 		if subNames, has := groups[groupName]; has {
 			contentMenu += "<dt>" + groupName + "</dt>"
@@ -130,10 +131,12 @@ func (cmd2 *Cmd2HttpServe) helpPageCreate() {
 	htmls["menu"] = contentMenu
 }
 
-func (cmd2 *Cmd2HttpServe) myHandlerHelp(w http.ResponseWriter, r *http.Request) {
-	title := cmd2.config.Title
-	cmd2.helpPageCreate()
-	tabsStr := ""
+var helpOnce sync.Once
+
+func (srv *Server) handlerHelp(w http.ResponseWriter, r *http.Request) {
+	helpOnce.Do(srv.helpPageCreate)
+
+	var tabsStr string
 	if IsFileExists("./s/my.css") {
 		tabsStr += "<link  type='text/css' rel='stylesheet' href='/s/my.css'>"
 	}
@@ -142,24 +145,20 @@ func (cmd2 *Cmd2HttpServe) myHandlerHelp(w http.ResponseWriter, r *http.Request)
 		tabsStr += "<script src='/s/my.js'></script>"
 	}
 	tabsStr += htmls["body"]
-	reg := regexp.MustCompile(`\s+`)
-	tabsStr = reg.ReplaceAllString(tabsStr, " ")
 
-	str := reg.ReplaceAllString(helpTPL, " ")
-
-	tpl, _ := template.New("page").Parse(str)
+	tpl, _ := template.New("page").Parse(helpTPL)
 	values := make(map[string]string)
 	values["version"] = version
-	values["title"] = title
+	values["title"] = srv.config.Title
 	values["content_body"] = tabsStr
 	values["content_menu"] = htmls["menu"]
-	values["intro"] = cmd2.config.Intro
+	values["intro"] = srv.config.Intro
 
 	w.Header().Add("c2h", version)
 	tpl.Execute(w, values)
 }
 
-func (cmd2 *Cmd2HttpServe) index(w http.ResponseWriter, r *http.Request) {
-	req := request{writer: w, req: r, cmd2: cmd2}
+func (srv *Server) index(w http.ResponseWriter, r *http.Request) {
+	req := request{writer: w, req: r, cmd2: srv}
 	req.Deal()
 }

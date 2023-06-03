@@ -1,3 +1,4 @@
 {
- "cmd":"date"
+ "Command":"date",
+ "_note":"文件名不被支持"
 }

@@ -17,7 +17,7 @@ var _port = flag.Int("port", 0, "overwrite the port in the config file")
 func main() {
 	flag.Parse()
 
-	server := internal.NewCmd2HTTPServe(*configPath)
+	server := internal.NewServer(*configPath)
 	if *_port > 0 {
 		server.SetPort(*_port)
 	}
