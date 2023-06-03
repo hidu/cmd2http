@@ -5,9 +5,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
-	"github.com/hidu/cmd2http/serve"
+	"github.com/hidu/cmd2http/internal"
 )
 
 var configPath = flag.String("conf", "./conf/cmd2http.json", "json config file")
@@ -16,11 +17,11 @@ var _port = flag.Int("port", 0, "overwrite the port in the config file")
 func main() {
 	flag.Parse()
 
-	server := serve.NewCmd2HTTPServe(*configPath)
+	server := internal.NewCmd2HTTPServe(*configPath)
 	if *_port > 0 {
 		server.SetPort(*_port)
 	}
-	server.Run()
+	log.Println("exit:", server.Run())
 }
 
 // aaa
@@ -29,6 +30,6 @@ func init() {
 
 	flag.Usage = func() {
 		df()
-		fmt.Fprintf(os.Stderr, "\n convert system command as http service\n https://github.com/hidu/cmd2http/\n")
+		fmt.Fprint(os.Stderr, "\n convert system command as http service\n https://github.com/hidu/cmd2http/\n")
 	}
 }

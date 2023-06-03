@@ -1,15 +1,16 @@
-package serve
+package internal
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -53,15 +54,14 @@ func (req *request) log(infos ...string) {
 }
 
 func (req *request) Close() {
-	used := fmt.Sprintf("time_use:%.3fms", float64(time.Now().Sub(req.startTime).Nanoseconds())/1000000.0)
+	used := fmt.Sprintf("time_use:%.3fms", float64(time.Since(req.startTime).Nanoseconds())/1000000.0)
 	log.Println(strings.Join(req.logInfo, " "), used)
-	//    fmt.Println(len(req.logInfo),req.logInfo)
 }
 
 func (req *request) handleStatic() {
 	if req.reqPath == "" {
 		if IsFileExists("./s/index.html") {
-			http.Redirect(req.writer, req.req, "/s/", 302)
+			http.Redirect(req.writer, req.req, "/s/", http.StatusFound)
 		} else {
 			req.cmd2.myHandlerHelp(req.writer, req.req)
 		}
@@ -76,25 +76,32 @@ func (req *request) tryExecCmd() {
 	if !has {
 		req.log("status:404")
 		req.writer.WriteHeader(404)
-		fmt.Fprintf(req.writer, "<h1>404</h1>")
+		fmt.Fprint(req.writer, "<h1>404</h1>")
 		return
 	}
 
-	args := make([]string, len(conf.paramsAll))
+	args := make([]string, 0, len(conf.paramsAll))
 	env := make(map[string]string)
 
-	for i, _param := range conf.paramsAll {
-		if !_param.isValParam {
-			args[i] = _param.Name
+	for _, param := range conf.paramsAll {
+		if !param.isValParam {
+			args = append(args, param.Name)
 			continue
 		}
-		val := req.req.FormValue(_param.Name)
+		val := req.req.FormValue(param.Name)
 		if val == "" {
-			val = _param.DefaultValue
+			val = param.DefaultValue
 		}
-		args[i] = val
-		env[_paramPrefix+_param.Name] = val
+
+		// 特殊的参数：由多个参数合并在一起
+		if param.Name == "_PARAMS" {
+			args = append(args, strings.Fields(val)...)
+			continue
+		}
+		args = append(args, val)
+		env[_paramPrefix+param.Name] = val
 	}
+
 	for k, v := range req.req.Form {
 		_key := _paramPrefix + k
 		_, has := env[_key]
@@ -119,16 +126,18 @@ func (req *request) tryExecCmd() {
 			return
 		}
 	}
-	//      req.log("["+conf.cmd+" "+strings.Join(args," ")+"]")
-	//      fmt.Println("args:",args)
 	req.exec()
 }
 
 func (req *request) exec() {
 	conf := req.cmdConf
-	cmd := exec.Command(conf.Cmd, req.cmdArgs...)
+
+	ctx, cancel := context.WithTimeout(req.req.Context(), conf.getTimeout())
+	defer cancel()
+	cmd := exec.CommandContext(ctx, conf.Cmd, req.cmdArgs...)
+	log.Println("exec:", cmd.String())
 	// when use cache,disable the env params
-	env := syscall.Environ()
+	env := os.Environ()
 	if conf.CacheLife < 3 {
 		for k, v := range req.cmdEnv {
 			env = append(env, k+"="+v)
@@ -151,39 +160,12 @@ func (req *request) exec() {
 		}
 		return
 	}
-	done := make(chan error)
-	go func() {
-		done <- cmd.Wait()
-	}()
 
-	cc := req.writer.(http.CloseNotifier).CloseNotify()
+	err = cmd.Wait()
 
-	isResonseOk := true
+	isResponseOk := err == nil
 
-	killCmd := func(msg string) {
-		if err := cmd.Process.Kill(); err != nil {
-			log.Println("failed to kill: ", err)
-		}
-		req.log("killed:" + msg)
-		//            log.Println(logStr)
-		isResonseOk = false
-	}
-
-	select {
-	case <-cc:
-		killCmd("client close")
-	case <-time.After(time.Duration(conf.Timeout) * time.Second):
-		killCmd("timeout")
-		//               w.WriteHeader();
-	case <-done:
-	}
-	if isResonseOk {
-		cmdStatus := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		exitStatus := fmt.Sprintf(" [status:%d]", cmdStatus.ExitStatus())
-		req.log(exitStatus)
-	}
-
-	if !isResonseOk || !cmd.ProcessState.Success() {
+	if !isResponseOk || !cmd.ProcessState.Success() {
 		req.writer.WriteHeader(500)
 		req.writer.Write([]byte("<h1>Error 500</h1><pre>"))
 		req.writer.Write([]byte(strings.Join(req.logInfo, " ")))
@@ -236,7 +218,7 @@ func (req *request) sendResponse(outStr string) {
 		m := make(map[string]string)
 		m["data"] = outStr
 		jsonByte, _ := json.Marshal(m)
-		fmt.Fprintf(w, fmt.Sprintf(`%s(%s)`, cb, string(jsonByte)))
+		fmt.Fprintf(w, `%s(%s)`, cb, string(jsonByte))
 	} else {
 		w.Header().Set("Content-Type", "text/plain;charset="+charset)
 		w.Write([]byte(outStr))

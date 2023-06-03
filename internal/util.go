@@ -1,24 +1,16 @@
-package serve
+package internal
 
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"strings"
-
-	"github.com/hidu/goutils/fs"
 )
 
 // IsFileExists check file exists
 func IsFileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-// LoadRes get data as []byte
-func LoadRes(path string) []byte {
-	return Asset.GetContent(path)
 }
 
 // InArray lick php func in_array
@@ -41,7 +33,7 @@ func LoadParamValuesFromFile(filePath string) (values []string) {
 	if !IsFileExists(filePath) {
 		return
 	}
-	bf, err := fs.FileGetContents(filePath)
+	bf, err := os.ReadFile(filePath)
 	if err != nil {
 		return
 	}
@@ -56,8 +48,8 @@ func LoadParamValuesFromFile(filePath string) (values []string) {
 	return
 }
 
-func loadJSONFile(jsonPath string, val interface{}) error {
-	bs, err := ioutil.ReadFile(jsonPath)
+func loadJSONFile(jsonPath string, val any) error {
+	bs, err := os.ReadFile(jsonPath)
 	if err != nil {
 		return err
 	}

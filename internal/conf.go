@@ -1,4 +1,4 @@
-package serve
+package internal
 
 import (
 	"encoding/json"
@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 type serverConf struct {
@@ -22,6 +23,7 @@ type serverConf struct {
 	CacheDir    string              `json:"cache_dir"`
 	confPath    string
 }
+
 type cmdItem struct {
 	Name      string `json:"-"`
 	CmdRaw    string `json:"cmd"`
@@ -36,10 +38,15 @@ type cmdItem struct {
 	CacheLife int64                `json:"cache_life"`
 }
 
+func (c *cmdItem) getTimeout() time.Duration {
+	return time.Duration(c.Timeout) * time.Second
+}
+
 func (c *cmdItem) String() string {
 	d, _ := json.MarshalIndent(c, "", "  ")
 	return string(d)
 }
+
 func (conf *serverConf) String() string {
 	d, _ := json.MarshalIndent(conf, "", "  ")
 	return string(d)
@@ -63,7 +70,6 @@ func (p *cmdParam) getValues() []string {
 		return p.Values
 	}
 	return LoadParamValuesFromFile(p.ValuesFile)
-
 }
 
 func (conf *serverConf) parse() {
@@ -79,7 +85,7 @@ func (conf *serverConf) parse() {
 		}
 
 		if cmdConf.Timeout < 1 {
-			cmdConf.Timeout = 30
+			cmdConf.Timeout = conf.Timeout
 		}
 		if cmdConf.Charsets == nil {
 			cmdConf.Charsets = make([]string, 0)

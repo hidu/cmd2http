@@ -2,12 +2,11 @@
 <html>
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-<meta name="author" content="duwei">
 <meta name="src" content="https://github.com/hidu/cmd2http">
 <title>{{.title}} cmd2http {{.version}}</title>
-<link type="text/css" rel="stylesheet" href="/res/css/style.css">
-<script src="/res/js/jquery.js"></script>
-<script src="/res/js/jw.js"></script>
+<link type="text/css" rel="stylesheet" href="/static/css/style.css">
+<script src="/static/js/jquery.js"></script>
+<script src="/static/js/jw.js"></script>
 <script>
 	function findByName(form,name){
 		return $(form).find("[name="+name+"]");
@@ -101,7 +100,7 @@
 </head>
 <body>
   <div id="header">
-	   <div class='right'>cmd2http:{{.version}}</div>
+	   <div class='right'>cmd2http</div>
 	   <div class='left'><h1>{{.title}}</h1></div>
 		<div class='left' style='padding-left:20px'>{{.intro}}</div>
 		<div class="c"></div>
@@ -119,11 +118,5 @@
   &copy;<a href="https://github.com/hidu/cmd2http" target="_blank">github.com/hidu/cmd2http</a>
   <br/><div id="new_version_slot">&nbsp;</div><br/>
   </div>
-  <script>
-var cmd2http_version="{{.version}}";
-setTimeout(function(){
-  $.getScript("https://hidu.github.io/cmd2http/check.js");
-},1000);
-</script>
 </body>
 </html>

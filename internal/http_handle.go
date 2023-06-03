@@ -1,4 +1,4 @@
-package serve
+package internal
 
 import (
 	"fmt"
@@ -144,8 +144,8 @@ func (cmd2 *Cmd2HttpServe) myHandlerHelp(w http.ResponseWriter, r *http.Request)
 	tabsStr += htmls["body"]
 	reg := regexp.MustCompile(`\s+`)
 	tabsStr = reg.ReplaceAllString(tabsStr, " ")
-	str := string(Asset.GetContent("res/tpl/help.html"))
-	str = reg.ReplaceAllString(str, " ")
+
+	str := reg.ReplaceAllString(helpTPL, " ")
 
 	tpl, _ := template.New("page").Parse(str)
 	values := make(map[string]string)
@@ -159,7 +159,7 @@ func (cmd2 *Cmd2HttpServe) myHandlerHelp(w http.ResponseWriter, r *http.Request)
 	tpl.Execute(w, values)
 }
 
-func (cmd2 *Cmd2HttpServe) myHandlerRoot(w http.ResponseWriter, r *http.Request) {
+func (cmd2 *Cmd2HttpServe) index(w http.ResponseWriter, r *http.Request) {
 	req := request{writer: w, req: r, cmd2: cmd2}
 	req.Deal()
 }

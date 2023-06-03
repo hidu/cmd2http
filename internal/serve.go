@@ -1,19 +1,17 @@
-package serve
+package internal
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/fsgo/fsgo/fsfs"
 	"github.com/hidu/goutils/cache"
-	"github.com/hidu/goutils/fs"
-	"github.com/hidu/goutils/time_util"
 )
 
 // Cmd2HttpServe server struct
 type Cmd2HttpServe struct {
-	logFile   *os.File
 	logPath   string
 	config    *serverConf
 	Cache     cache.Cache
@@ -33,37 +31,35 @@ func (cmd2 *Cmd2HttpServe) SetPort(port int) {
 }
 
 // Run start http server
-func (cmd2 *Cmd2HttpServe) Run() {
+func (cmd2 *Cmd2HttpServe) Run() error {
 	cmd2.setupCache()
 
+	static, err := fs.Sub(resourceWeb, "resource/static")
+	if err != nil {
+		return err
+	}
 	http.Handle("/s/", http.FileServer(http.Dir("./")))
-	http.Handle("/res/", Asset.HTTPHandler("/"))
-	http.Handle("/favicon.ico", Asset.FileHandlerFunc("/res/css/favicon.ico"))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
+	http.Handle("/favicon.ico", http.FileServer(http.FS(favicon)))
 	http.HandleFunc("/help", cmd2.myHandlerHelp)
-	http.HandleFunc("/", cmd2.myHandlerRoot)
+	http.HandleFunc("/", cmd2.index)
 
 	addr := fmt.Sprintf(":%d", cmd2.config.Port)
 	log.Println("listen at", addr)
 	cmd2.setupLog()
-	defer cmd2.logFile.Close()
 
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
-		fmt.Println(err.Error())
-		log.Println(err.Error())
-	}
+	return http.ListenAndServe(addr, nil)
 }
-func (cmd2 *Cmd2HttpServe) setupLog() {
-	cmd2.logFile, _ = os.OpenFile(cmd2.logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	log.SetOutput(cmd2.logFile)
 
-	time_util.SetInterval(func() {
-		if !fs.FileExists(cmd2.logPath) {
-			cmd2.logFile.Close()
-			cmd2.logFile, _ = os.OpenFile(cmd2.logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-			log.SetOutput(cmd2.logFile)
-		}
-	}, 30)
+func (cmd2 *Cmd2HttpServe) setupLog() {
+	if cmd2.logPath == "" {
+		return
+	}
+	logFile := &fsfs.Rotator{
+		ExtRule: "1hour",
+		Path:    cmd2.logPath,
+	}
+	log.SetOutput(logFile)
 }
 
 func (cmd2 *Cmd2HttpServe) setupCache() {
@@ -73,7 +69,7 @@ func (cmd2 *Cmd2HttpServe) setupCache() {
 		cmd2.cacheAble = true
 	} else {
 		cmd2.Cache = cache.NewNoneCache()
-		log.Printf("use none cache")
+		log.Print("use none cache")
 	}
 	cmd2.Cache.StartGcTimer(600)
 }

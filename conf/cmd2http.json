@@ -1,0 +1,12 @@
+{
+  "port": 8310,
+  "title": "default title",
+  "intro": "hello.world",
+  "timeout": 60,
+  "charset":"utf-8",
+  "charset_list": [
+    "utf-8"
+  ],
+  "cache_dir": "./cache_data/",
+  "cmds": {}
+}
