@@ -9,7 +9,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/hidu/goutils/html_util"
+	"github.com/fsgo/fsgo/fshtml"
 )
 
 var htmls = make(map[string]string)
@@ -43,30 +43,32 @@ func (srv *Server) helpPageCreate() {
 		_formStr := ` <form action='/%s' methor='get' onsubmit='return form_check(this,"%s")' id='form_%s'>`
 		tabsBd += fmt.Sprintf(_formStr, name, name, name)
 		tabsBd += "<div class='note note-g'><div><b>URI</b> :&nbsp;/" + name + "</div>" +
-			"<div><b>Command</b> :&nbsp;[&nbsp;" + item.Command +
-			"&nbsp;]&nbsp;<b>Timeout</b> :&nbsp;" + fmt.Sprintf("%.1f", item.getTimeout().Seconds()) + "s</div>"
+			"<div><b>Command</b> :&nbsp;[&nbsp;" + item.Command + "&nbsp;]&nbsp;" +
+			"<b>Timeout</b> :&nbsp;" + fmt.Sprintf("%.1f", item.getTimeout().Seconds()) + "s&nbsp;" +
+			"<b>Cache</b> :&nbsp;" + fmt.Sprintf("%.1f", item.getCacheLife().Seconds()) + "s&nbsp;" +
+			"</div>"
 		if item.Intro != "" {
 			tabsBd = tabsBd + "<div><b>Intro</b> :&nbsp;&nbsp;" + item.Intro + "</div>"
 		}
 		tabsBd = tabsBd + "</div>"
 		tabsBd = tabsBd + "<fieldset><ul class='ul-1'>"
-		for _, _param := range item.paramsAll {
-			if _param.isValParam && _param.Name != "charset" && _param.Name != "format" {
-				placeholder := ""
-				if _param.DefaultValue != "" {
-					placeholder = "placeholder='" + _param.DefaultValue + "'"
+		for _, param := range item.paramsAll {
+			if param.isValParam && param.name != "charset" && param.name != "format" {
+				var placeholder string
+				if param.Default != "" {
+					placeholder = "placeholder='" + param.Default + "'"
 				}
-				if _param.HTML != "" {
-					placeholder += " " + _param.HTML
+				if param.HTML != "" {
+					placeholder += " " + param.HTML
 				}
-				tabsBd += "<li>" + _param.Name + ":"
+				tabsBd += "<li>" + param.name + ":"
 
-				_paramValues := _param.getValues()
+				_paramValues := param.getValues()
 
 				if len(_paramValues) == 0 {
-					tabsBd += "<input class='r-text p_" + _param.Name + "' type='text' name='" + _param.Name + "' " + placeholder + ">"
+					tabsBd += "<input class='r-text p_" + param.name + "' type='text' name='" + param.name + "' " + placeholder + ">"
 				} else {
-					options := html_util.NewHtml_Options()
+					var opts []fshtml.Element
 					for _, _v := range _paramValues {
 						_optionKey := _v
 						_optionVal := _v
@@ -75,10 +77,19 @@ func (srv *Server) helpPageCreate() {
 							_optionKey = strings.TrimSpace(_v[:_pos])
 							_optionVal = strings.TrimSpace(_v[_pos+1:])
 						}
-						options.AddOption(_optionKey, _optionVal, _param.DefaultValue == _optionKey)
+
+						opt := fshtml.NewAny("option")
+						fshtml.SetValue(opt, _optionKey)
+						opt.Body = fshtml.ToElements(fshtml.String(_optionVal))
+						fshtml.SetSelected(opt, param.Default == _optionKey)
+						opts = append(opts, opt)
 					}
-					tabsBd += html_util.Html_select(_param.Name, options, "class='r-select p_"+_param.Name+"'", placeholder)
-					tabsBd += "</select>\n"
+					se := fshtml.NewSelect(opts...)
+					fshtml.SetName(se, param.name)
+					fshtml.SetClass(se, "r-select", "p_"+param.name)
+					fshtml.SetAttrNoValue(se, placeholder)
+					bf, _ := se.HTML()
+					tabsBd += string(bf)
 				}
 				tabsBd += "</li>\n"
 			}
@@ -96,8 +107,8 @@ func (srv *Server) helpPageCreate() {
 			}
 			tabsBd += "</select></li>\n"
 		}
-		if item.CacheLife > 3 && srv.cacheAble() {
-			tabsBd += fmt.Sprintf(cacheLiTPL, item.CacheLife)
+		if item.getCacheLife() > 0 && srv.cacheAble() {
+			tabsBd += fmt.Sprintf(cacheLiTPL, item.Cache)
 		}
 
 		tabsBd += `</ul><div class='c'></div>
@@ -164,7 +175,7 @@ func (srv *Server) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := request{writer: w, req: r, cmd2: srv}
+	req := request{writer: w, req: r, srv: srv}
 	req.Deal()
 }
 

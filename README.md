@@ -47,7 +47,10 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
 
 ```
 
-###主配置文件(cmd2http.json)
+### 主配置文件 
+支持 `.json`、`.toml` 后缀的文件。
+
+如 `conf/cmd2http.json`:
 ```json
 {
    "Port":8310,
@@ -73,21 +76,23 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
    }
 }
 ```
-命令配置(Commands)(如上的pwd，echo)也可以配置到单独的文件，位于上述配置文件(cmd2http.json)目录下的cmd目录下去。  
+命令配置(Commands)(如上的pwd，echo)也可以配置到单独的文件，位于上述配置文件(cmd2http.json)目录下的 `cmd` 子目录下去。  
 
 所以在配置文件中写的路径都使用以此为基准目录的相对路径即可。 
 
 配置项说明： 
-*   Port      : http 服务监听端口
-*   Title     : http 页面标题
+*   Port      : HTTP 服务监听端口
+*   Title     : HTTP 页面标题
 *   Intro     : 介绍
 *   Timeout   : 默认的运行超时时间
-*   CacheDir  : 运行cache存放的目录（单项命令中配置了cache项后生效）
-*   Charset   : 全局默认的编码，只用于html页面结果展现
-*   Charsets  : 全局默认的编码可选值，只用于html页面结果展现
+*   CacheDir  : 运行结果缓存存放的目录（单项命令中配置了 Cache 项后生效）
+*   Charset   : 全局默认的编码，只用于 HTML 页面结果展现
+*   Charsets  : 全局默认的编码可选值，只用于 HTML 页面结果展现
 
-###命令配置文件(json)
-ls.json内容为：
+### 命令配置文件
+支持 `.json`、`.toml` 后缀的文件，配置文件存放于 `conf/cmd/` 目录。
+
+`ls.json` 内容为：
 ```json
 {
     "Command": "../cmds/ls.sh a $a b $b $c $d|你好",
@@ -102,11 +107,11 @@ ls.json内容为：
     ],
     "Params": {
         "c": {
-            "values": ["1","2","3" ],
-            "html": "style='width:200px'"
+            "Values": ["1","2","3" ],
+            "HTML": "style='width:200px'"
         },
         "d": {
-            "values_file": "../data/ls_d.csv"
+            "ValuesFile": "../data/ls_d.csv"
         }
     }
 }
@@ -115,17 +120,17 @@ ls.json内容为：
 *  Command   :  待运行的命令，参数使用`$`前缀，如 `$a`,`$a1`,`$a_1`  
 *  Intro : 介绍
 *  Timeout : 当前命令的运行超时时间，若没有设置或者为0 则使用全局的 timeout
-*  Cache : 运行结果cache有效期，单位秒，为0 或者全局的cache_dir没有设置的时候不使用cache
+*  Cache : 运行结果缓存有效期，单位秒，为 0 或者全局的 `CacheDir` 没有设置的时候不使用缓存
 *  Params : 参数配置
 *  Params.c : 参数 `$c`的配置项
-*  Params.c.values : 参数 `$c`的可选值，用来在form表单中展现，只能是字符串,values 有值的情况下使用select展现样式，否则为input=text
-*  Params.c.html : 参数 `$c`的form控件额外的 html代码块
-*  Params.c.values_file : 参数 `$c`的可选值录入文件(eg:[可选值示例文件](./example/data/ls_d.csv))
-*  Charset    : 默认的编码，只用于 HTML 页面结果展现
-*  Charsets   : 默认的编码可选值，只用于html页面结果展现
+*  Params.c.Values : 参数 `$c`的可选值，用来在 form 表单中展现，只能是字符串,values 有值的情况下使用 select 展现样式，否则为 input=text
+*  Params.c.HTML : 参数 `$c`的 form 控件额外的 HTML 代码块
+*  Params.c.ValuesFile : 参数 `$c`的可选值录入文件(eg:[可选值示例文件](./example/data/ls_d.csv))
+*  Charset   : 默认的编码，只用于 HTML 页面结果展现
+*  Charsets  : 默认的编码可选值，只用于 HTML 页面结果展现
 *  Group     :  页面展现分组，默认为`default`
 
-###命令如何读取参数
+### 命令如何读取参数
 ```
 "Command": "../cmds/ls.sh a $a b $b $c $d|你好"
 ```
@@ -176,10 +181,10 @@ function form_sleep_jsonp(data){
 }
 ```
 
-##作为http服务调用
-http://127.0.0.1:8310/ls?format=plain&a=123&b=456&c=789  
-这样调用即可，参数format是用于控制输出内容格式的，接口调用的时候直接使用`format=plain`即可。  
-下面运行界面截图中展现的连接地址即为api调用地址。  
+## 作为 HTTP 服务调用
+`http://127.0.0.1:8310/ls?format=plain&a=123&b=456&c=789` 
+这样调用即可，参数 `format` 是用于控制输出内容格式的，接口调用的时候直接使用 `format=plain` 即可。  
+下面运行界面截图中展现的连接地址即为 API 调用地址。  
 
 ##界面截图
 ![界面截图](http://hidu.github.io/cmd2http/screenshot/index.png)

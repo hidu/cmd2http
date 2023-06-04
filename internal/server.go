@@ -6,14 +6,15 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fsgo/fscache"
+	"github.com/fsgo/fscache/filecache"
+	"github.com/fsgo/fscache/nopcache"
 	"github.com/fsgo/fsgo/fsfs"
-	"github.com/hidu/goutils/cache"
 )
 
 type Server struct {
-	logPath string
-	config  *Config
-	Cache   cache.Cache
+	config *Config
+	cache  fscache.Cache
 }
 
 func NewServer(confPath string) *Server {
@@ -53,25 +54,32 @@ func (srv *Server) Run() error {
 }
 
 func (srv *Server) setupLog() {
-	if srv.logPath == "" {
+	lp := srv.config.getLogPath()
+	if lp == "" {
 		return
 	}
 	logFile := &fsfs.Rotator{
 		ExtRule: "1hour",
-		Path:    srv.logPath,
+		Path:    lp,
 	}
 	log.SetOutput(logFile)
 }
 
 func (srv *Server) setupCache() {
 	if srv.cacheAble() {
-		srv.Cache = cache.NewFileCache(srv.config.CacheDir)
+		opt := &filecache.Option{
+			Dir: srv.config.getCacheDir(),
+		}
+		var err error
+		srv.cache, err = filecache.New(opt)
+		if err != nil {
+			log.Fatalln("init file cache failed:", err)
+		}
 		log.Println("use file cache,cache dir:", srv.config.CacheDir)
 	} else {
-		srv.Cache = cache.NewNoneCache()
+		srv.cache = nopcache.Nop
 		log.Print("use none cache")
 	}
-	srv.Cache.StartGcTimer(600)
 }
 
 func (srv *Server) cacheAble() bool {

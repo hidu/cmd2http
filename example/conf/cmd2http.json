@@ -7,6 +7,6 @@
     "CharsetList": [
         "utf-8"
     ],
-    "CacheDir": "./cache_data/",
-    "Cmds": {}
+    "CacheDir": "../cache_data/",
+    "Commands": {}
 }

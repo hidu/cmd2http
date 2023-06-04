@@ -3,15 +3,15 @@
     "Intro": "hello",
     "Params": {
         "c": {
-            "values": [
+            "Values": [
                 "1",
                 "2",
                 "3"
             ],
-            "html": "style='width:200px'"
+            "HTML": "style='width:200px'"
         },
         "d": {
-            "values_file": "../data/ls_d.csv"
+            "ValuesFile": "../data/ls_d.csv"
         }
     }
 }

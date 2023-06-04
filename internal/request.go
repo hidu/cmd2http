@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -18,7 +19,7 @@ type request struct {
 	writer    http.ResponseWriter
 	req       *http.Request
 	reqPath   string
-	cmd2      *Server
+	srv       *Server
 	startTime time.Time
 	logInfo   []string
 	stop      bool
@@ -63,7 +64,7 @@ func (req *request) handleStatic() {
 		if IsFileExists("./s/index.html") {
 			http.Redirect(req.writer, req.req, "/s/", http.StatusFound)
 		} else {
-			req.cmd2.handlerHelp(req.writer, req.req)
+			req.srv.handlerHelp(req.writer, req.req)
 		}
 		req.stop = true
 	}
@@ -72,7 +73,7 @@ func (req *request) handleStatic() {
 var _paramPrefix = "c2h_form_"
 
 func (req *request) tryExecCmd() {
-	conf, has := req.cmd2.config.Commands[req.reqPath]
+	conf, has := req.srv.config.Commands[req.reqPath]
 	if !has {
 		req.log("status:404")
 		req.writer.WriteHeader(404)
@@ -85,21 +86,21 @@ func (req *request) tryExecCmd() {
 
 	for _, param := range conf.paramsAll {
 		if !param.isValParam {
-			args = append(args, param.Name)
+			args = append(args, param.name)
 			continue
 		}
-		val := req.req.FormValue(param.Name)
+		val := req.req.FormValue(param.name)
 		if val == "" {
-			val = param.DefaultValue
+			val = param.Default
 		}
 
 		// 特殊的参数：由多个参数合并在一起
-		if param.Name == "_PARAMS" {
+		if param.name == "_PARAMS" {
 			args = append(args, strings.Fields(val)...)
 			continue
 		}
 		args = append(args, val)
-		env[_paramPrefix+param.Name] = val
+		env[_paramPrefix+param.name] = val
 	}
 
 	for k, v := range req.req.Form {
@@ -114,15 +115,15 @@ func (req *request) tryExecCmd() {
 	req.cmdEnv = env
 
 	useCache := req.req.FormValue("cache")
-	//      fmt.Println("conf.cache_life",conf.cache_life)
-	if useCache != "no" && conf.CacheLife > 3 {
+	// fmt.Println("conf.cache_life",conf.getCacheLife())
+	if useCache != "no" && conf.getCacheLife() > 0 {
 		req.cacheKey = GetCacheKey(conf.Command, args)
 		//          log.Println("cache_key:",cacheKey)
-		cacheHas, cacheData := req.cmd2.Cache.Get(req.cacheKey)
-		if cacheHas {
+		cacheRet := req.srv.cache.Get(req.req.Context(), req.cacheKey)
+		if cacheRet.Err == nil {
 			req.log("cache hit")
 			req.writer.Header().Add("cache_hit", "1")
-			req.sendResponse(string(cacheData))
+			req.sendResponse(string(cacheRet.Payload))
 			return
 		}
 	}
@@ -134,11 +135,11 @@ func (req *request) exec() {
 	ctx, cancel := context.WithTimeout(req.req.Context(), conf.getTimeout())
 	defer cancel()
 	cmd := exec.CommandContext(ctx, conf.cmdName, req.cmdArgs...)
-	cmd.Dir = conf.confDir
+	cmd.Dir = filepath.Dir(conf.confDir)
 	log.Println("exec:", cmd.String())
 	// when use cache,disable the env params
 	env := os.Environ()
-	if conf.CacheLife < 3 {
+	if conf.getCacheLife() == 0 {
 		for k, v := range req.cmdEnv {
 			env = append(env, k+"="+v)
 		}
@@ -177,8 +178,8 @@ func (req *request) exec() {
 		return
 	}
 
-	if out.Len() > 0 && conf.CacheLife > 3 {
-		req.cmd2.Cache.Set(req.cacheKey, out.Bytes(), conf.CacheLife)
+	if out.Len() > 0 && conf.getCacheLife() > 0 {
+		req.srv.cache.Set(req.req.Context(), req.cacheKey, out.Bytes(), conf.getCacheLife())
 	}
 	req.sendResponse(out.String())
 }
@@ -197,7 +198,7 @@ func (req *request) sendResponse(outStr string) {
 	//      fmt.Println("outStr:",outStr)
 	charset := r.FormValue("charset")
 	if charset == "" {
-		charset = conf.Charset
+		charset = conf.getCharset()
 	}
 	if format == "" || format == "html" {
 		w.Header().Set("Content-Type", "text/html;charset="+charset)

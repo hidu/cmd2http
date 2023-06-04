@@ -28,9 +28,6 @@ func GetCacheKey(cmd string, params []string) string {
 
 // LoadParamValuesFromFile load values file as  slice
 func LoadParamValuesFromFile(filePath string) (values []string) {
-	if !IsFileExists(filePath) {
-		return
-	}
 	bf, err := os.ReadFile(filePath)
 	if err != nil {
 		return

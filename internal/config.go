@@ -17,8 +17,9 @@ type Config struct {
 	Port     int
 	Title    string
 	Intro    string
-	Timeout  int // 超时时间，单位秒，默认 30s
-	Charsets []string
+	Timeout  int      // 超时时间，单位秒，默认 30s
+	Charset  string   // 默认字符集，可选
+	Charsets []string // 可选字符集，可选
 	Commands map[string]*cmdConfig
 	LogPath  string
 	CacheDir string
@@ -40,6 +41,40 @@ func (cfg *Config) getTimeout() int {
 		return cfg.Timeout
 	}
 	return 30
+}
+
+func (cfg *Config) getCacheDir() string {
+	if cfg.CacheDir == "" {
+		return ""
+	}
+	if filepath.IsAbs(cfg.CacheDir) {
+		return cfg.CacheDir
+	}
+	return filepath.Join(cfg.confDir, cfg.CacheDir)
+}
+
+func (cfg *Config) getLogPath() string {
+	if cfg.LogPath == "" {
+		return ""
+	}
+	if filepath.IsAbs(cfg.LogPath) {
+		return cfg.LogPath
+	}
+	return filepath.Join(cfg.confDir, cfg.LogPath)
+}
+
+func (cfg *Config) getCharsets() []string {
+	if len(cfg.Charsets) > 0 {
+		return cfg.Charsets
+	}
+	return []string{"utf-8", "gbk", "gb2312"}
+}
+
+func (cfg *Config) getCharset() string {
+	if cfg.Charset != "" {
+		return cfg.Charset
+	}
+	return "utf-8"
 }
 
 func (cfg *Config) String() string {
@@ -66,14 +101,14 @@ func (cfg *Config) groups() []string {
 }
 
 type cmdConfig struct {
-	Command   string               // 完整的命令，如  ../cmds/ls.sh a $a b $b $c $d|你好
-	Intro     string               // 介绍，可选
-	Timeout   int                  // 参数时间，单位秒，可选
-	Charset   string               // 默认输出字符编码，可选
-	Charsets  []string             // 可选字符集，可选
-	Params    map[string]*cmdParam // 参数配置，可选
-	Group     string               // 分组名称，可选
-	CacheLife int64                // 缓存有效期，可选
+	Command  string               // 完整的命令，如  ../cmds/ls.sh a $a b $b $c $d|你好
+	Intro    string               // 介绍，可选
+	Timeout  int                  // 参数时间，单位秒，可选
+	Charset  string               // 默认输出字符编码，可选
+	Charsets []string             // 可选字符集，可选
+	Params   map[string]*cmdParam // 参数配置，可选
+	Group    string               // 分组名称，可选
+	Cache    int64                // 缓存有效期，可选,单位秒
 
 	// 以下参数不需要配置
 
@@ -91,6 +126,13 @@ func (cc *cmdConfig) getTimeout() time.Duration {
 	return time.Duration(cc.cfg.getTimeout()) * time.Second
 }
 
+func (cc *cmdConfig) getCacheLife() time.Duration {
+	if cc.cfg.CacheDir == "" || cc.Cache < 1 {
+		return 0
+	}
+	return time.Duration(cc.Cache) * time.Second
+}
+
 func (cc *cmdConfig) getGroup() string {
 	if cc.Group != "" {
 		return cc.Group
@@ -102,7 +144,14 @@ func (cc *cmdConfig) getCharsets() []string {
 	if len(cc.Charsets) > 0 {
 		return cc.Charsets
 	}
-	return cc.cfg.Charsets
+	return cc.cfg.getCharsets()
+}
+
+func (cc *cmdConfig) getCharset() string {
+	if cc.Charset != "" {
+		return cc.Charset
+	}
+	return cc.cfg.getCharset()
 }
 
 func (cc *cmdConfig) parser() {
@@ -118,7 +167,7 @@ func (cc *cmdConfig) parser() {
 	for i := 1; i < len(ps); i++ {
 		item := ps[i]
 		_param := new(cmdParam)
-		_param.Name = item
+		_param.name = item
 
 		if item[0] == '$' {
 			tmp := strings.Split(item+"|", "|")
@@ -127,9 +176,9 @@ func (cc *cmdConfig) parser() {
 				_param = _itemConf
 			}
 			_param.isValParam = true
-			_param.Name = name
-			if _param.DefaultValue == "" {
-				_param.DefaultValue = tmp[1]
+			_param.name = name
+			if _param.Default == "" {
+				_param.Default = tmp[1]
 			}
 		}
 		if _param.Values == nil {
@@ -137,7 +186,7 @@ func (cc *cmdConfig) parser() {
 		}
 		cc.paramsAll = append(cc.paramsAll, _param)
 	}
-	log.Println("register[", cc.name, "] cmd:", cc.Command)
+	log.Println("register [", cc.name, "], command:", cc.Command)
 }
 
 func (cc *cmdConfig) String() string {
@@ -146,16 +195,16 @@ func (cc *cmdConfig) String() string {
 }
 
 type cmdParam struct {
-	Name         string `json:"-"`
-	DefaultValue string `json:"default_value"`
-	isValParam   bool
-	Values       []string `json:"values"`
-	HTML         string   `json:"html"`
-	ValuesFile   string   `json:"values_file"`
+	name       string
+	Default    string
+	isValParam bool
+	Values     []string
+	HTML       string
+	ValuesFile string
 }
 
 func (p *cmdParam) ToString() string {
-	return fmt.Sprintf("name:%s,default:%s,isValParam:%v", p.Name, p.DefaultValue, p.isValParam)
+	return fmt.Sprintf("name:%s,default:%s,isValParam:%v", p.name, p.Default, p.isValParam)
 }
 
 func (p *cmdParam) getValues() []string {
