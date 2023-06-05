@@ -42,3 +42,7 @@ func LoadParamValuesFromFile(filePath string) (values []string) {
 	}
 	return
 }
+
+type cacheData struct {
+	Data []byte
+}

@@ -1,2 +1,0 @@
-*20140324
-    1.add add env support.now can use $c2h_form_charset get the value of the form in shell,others also

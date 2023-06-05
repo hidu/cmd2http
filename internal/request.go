@@ -121,10 +121,13 @@ func (req *request) tryExecCmd() {
 		//          log.Println("cache_key:",cacheKey)
 		cacheRet := req.srv.cache.Get(req.req.Context(), req.cacheKey)
 		if cacheRet.Err == nil {
-			req.log("cache hit")
-			req.writer.Header().Add("cache_hit", "1")
-			req.sendResponse(string(cacheRet.Payload))
-			return
+			cd := &cacheData{}
+			if ok, err := cacheRet.Value(&cd); ok && err == nil {
+				req.log("cache hit")
+				req.writer.Header().Add("cache_hit", "1")
+				req.sendResponse(string(cd.Data))
+				return
+			}
 		}
 	}
 	req.exec()
@@ -179,7 +182,10 @@ func (req *request) exec() {
 	}
 
 	if out.Len() > 0 && conf.getCacheLife() > 0 {
-		req.srv.cache.Set(req.req.Context(), req.cacheKey, out.Bytes(), conf.getCacheLife())
+		cd := &cacheData{
+			Data: out.Bytes(),
+		}
+		req.srv.cache.Set(req.req.Context(), req.cacheKey, cd, conf.getCacheLife())
 	}
 	req.sendResponse(out.String())
 }
