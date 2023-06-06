@@ -166,25 +166,30 @@ func (cc *cmdConfig) parser() {
 	// @todo
 	for i := 1; i < len(ps); i++ {
 		item := ps[i]
-		_param := new(cmdParam)
-		_param.name = item
+		param := new(cmdParam)
+		param.name = item
 
 		if item[0] == '$' {
 			tmp := strings.Split(item+"|", "|")
 			name := tmp[0][1:]
 			if _itemConf, has := cc.Params[name]; has {
-				_param = _itemConf
+				param = _itemConf
 			}
-			_param.isValParam = true
-			_param.name = name
-			if _param.Default == "" {
-				_param.Default = tmp[1]
+			param.isValParam = true
+			param.name = name
+			if param.Default == "" {
+				param.Default = tmp[1]
 			}
 		}
-		if _param.Values == nil {
-			_param.Values = make([]string, 0)
+		if param.Values == nil {
+			param.Values = make([]string, 0)
 		}
-		cc.paramsAll = append(cc.paramsAll, _param)
+
+		if param.Regexp != "" {
+			param.reg = regexp.MustCompile(param.Regexp)
+		}
+
+		cc.paramsAll = append(cc.paramsAll, param)
 	}
 	log.Println("register [", cc.name, "], command:", cc.Command)
 }
@@ -195,12 +200,15 @@ func (cc *cmdConfig) String() string {
 }
 
 type cmdParam struct {
-	name       string
-	Default    string
-	isValParam bool
+	Default    string // 默认值
 	Values     []string
-	HTML       string
-	ValuesFile string
+	ValuesFile string // 可选
+	HTML       string // HTML 属性，可选
+	Regexp     string // 参数的正则表达式，可选
+
+	name       string // 参数名，由配置内容解析得到
+	isValParam bool
+	reg        *regexp.Regexp
 }
 
 func (p *cmdParam) ToString() string {

@@ -1,0 +1,5 @@
+# 执行的命令
+Command = "exec $_PARAMS"
+
+[Params._PARAMS]
+Regexp="^(date|pwd)$"

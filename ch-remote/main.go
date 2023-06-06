@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var server = flag.String("s", os.Getenv("ch-remote-server"), "server addr, default value from env 'ch-remote-server'")
+var server = flag.String("s", os.Getenv("Ch_Remote_Server"), "server addr, default value from env 'Ch_Remote_Server'")
 var timeout = flag.Int("t", 60, "timeout, unit is seconds")
 var debug = flag.Bool("d", true, "print debug logs")
 

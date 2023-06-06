@@ -91,7 +91,16 @@ func (req *request) tryExecCmd() {
 		}
 		val := req.req.FormValue(param.name)
 		if val == "" {
+			val = req.req.PostFormValue(param.name)
+		}
+		if val == "" {
 			val = param.Default
+		}
+
+		if param.reg != nil && !param.reg.MatchString(val) {
+			req.log("status:400")
+			req.writer.WriteHeader(400)
+			fmt.Fprintf(req.writer, "<h1>400 bad request param %s=%q</h1>", param.name, val)
 		}
 
 		// 特殊的参数：由多个参数合并在一起
@@ -133,11 +142,20 @@ func (req *request) tryExecCmd() {
 	req.exec()
 }
 
+func (req *request) fixArgs(name string, args []string) (string, []string) {
+	if name != "exec" || len(args) == 0 {
+		return name, args
+	}
+	return args[0], args[1:]
+}
+
 func (req *request) exec() {
 	conf := req.cmdConf
 	ctx, cancel := context.WithTimeout(req.req.Context(), conf.getTimeout())
 	defer cancel()
-	cmd := exec.CommandContext(ctx, conf.cmdName, req.cmdArgs...)
+
+	name, args := req.fixArgs(conf.cmdName, req.cmdArgs)
+	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = filepath.Dir(conf.confDir)
 	log.Println("exec:", cmd.String())
 	// when use cache,disable the env params
@@ -160,7 +178,7 @@ func (req *request) exec() {
 		req.writer.WriteHeader(500)
 		fmt.Fprintf(req.writer, err.Error()+"\n")
 		for argI, argV := range req.cmdArgs {
-			fmt.Fprintf(req.writer, "arg_%d:%s\n", argI, argV)
+			fmt.Fprintf(req.writer, "<p>arg[%d]: %q</p>\n", argI, argV)
 		}
 		return
 	}
