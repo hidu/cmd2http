@@ -14,7 +14,7 @@ import (
 
 type Server struct {
 	config *Config
-	cache  fscache.Cache
+	cache  *fscache.ProS[string, []byte]
 }
 
 func NewServer(confPath string) *Server {
@@ -70,14 +70,18 @@ func (srv *Server) setupCache() {
 		opt := &filecache.Option{
 			Dir: srv.config.getCacheDir(),
 		}
-		var err error
-		srv.cache, err = filecache.New(opt)
+		cache, err := filecache.New(opt)
 		if err != nil {
 			log.Fatalln("init file cache failed:", err)
 		}
+		srv.cache = &fscache.ProS[string, []byte]{
+			SCache: cache,
+		}
 		log.Println("use file cache,cache dir:", srv.config.CacheDir)
 	} else {
-		srv.cache = nopcache.Nop
+		srv.cache = &fscache.ProS[string, []byte]{
+			SCache: nopcache.Nop,
+		}
 		log.Print("use none cache")
 	}
 }

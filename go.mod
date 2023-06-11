@@ -3,7 +3,7 @@ module github.com/hidu/cmd2http
 go 1.20
 
 require (
-	github.com/fsgo/fscache v0.0.0-20221106082135-4385911b5ab4
+	github.com/fsgo/fscache v0.0.0-20230610145917-6229bac2f6e5
 	github.com/fsgo/fsconf v0.2.11-0.20230405134610-720d6a2f54bf
 	github.com/fsgo/fsgo v0.0.7-0.20230604134926-0be4746b5f58
 )

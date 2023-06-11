@@ -26,6 +26,17 @@ func GetCacheKey(cmd string, params []string) string {
 	return cmd + "|||" + strings.Join(params, "&")
 }
 
+func checkDir(fp string) error {
+	info, err := os.Stat(fp)
+	if err == nil {
+		if info.IsDir() {
+			return nil
+		}
+		_ = os.RemoveAll(fp)
+	}
+	return os.MkdirAll(fp, 0750)
+}
+
 // LoadParamValuesFromFile load values file as  slice
 func LoadParamValuesFromFile(filePath string) (values []string) {
 	bf, err := os.ReadFile(filePath)
@@ -41,8 +52,4 @@ func LoadParamValuesFromFile(filePath string) (values []string) {
 		values = append(values, line)
 	}
 	return
-}
-
-type cacheData struct {
-	Data []byte
 }

@@ -115,7 +115,7 @@ func (srv *Server) helpPageCreate() {
            <center>
                 <input type='submit' class='btn'>
                 <span style='margin-right:50px'>&nbsp;</span>
-                <input type='reset' class='btn' onclick='form_reset(this.form)' title='reset the form and abort the request'>
+                <input type='reset' class='btn' onclick='form_reset(this.form)' title='reset the form and abort the Task'>
             </center>
            </fieldset><br/>
             <div class='div_url'></div>
@@ -175,8 +175,21 @@ func (srv *Server) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := request{writer: w, req: r, srv: srv}
-	req.Deal()
+	path := strings.Trim(r.URL.Path, "/")
+
+	if path == "" {
+		srv.handleStatic(w, r)
+		return
+	}
+
+	task := Task{
+		Ctx:     r.Context(),
+		Writer:  w,
+		Request: r,
+		srv:     srv,
+		Path:    path,
+	}
+	task.Deal()
 }
 
 func (srv *Server) checkAuth(w http.ResponseWriter, r *http.Request) (ret bool) {
@@ -215,4 +228,12 @@ func (srv *Server) checkAuth(w http.ResponseWriter, r *http.Request) (ret bool) 
 	}
 	doLogin()
 	return false
+}
+
+func (srv *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
+	if IsFileExists("./s/index.html") {
+		http.Redirect(w, r, "/s/", http.StatusFound)
+	} else {
+		srv.handlerHelp(w, r)
+	}
 }

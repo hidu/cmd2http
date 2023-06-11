@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Port     int
+	Port     int // 服务端口，可选，默认 8310
 	Title    string
 	Intro    string
 	Timeout  int      // 超时时间，单位秒，默认 30s
@@ -23,6 +23,8 @@ type Config struct {
 	Commands map[string]*cmdConfig
 	LogPath  string
 	CacheDir string
+
+	TmpDir string // 运行临时数据目录，可选，默认是和配置文件平行的 tmp 目录
 
 	BasicAuth string // 采用 Basic 认证的账号和密码，如 user:psw
 
@@ -235,6 +237,14 @@ func loadConfig(confPath string) *Config {
 	}
 	confDir := filepath.Dir(pathAbs)
 	cfg.confDir = confDir
+
+	if cfg.TmpDir == "" {
+		cfg.TmpDir = filepath.Join(filepath.Dir(confDir), "tmp")
+	}
+
+	if err = checkDir(cfg.TmpDir); err != nil {
+		log.Fatalf("check tmpDir %q failed:%v\n", cfg.TmpDir, err)
+	}
 
 	fileNames, err := filepath.Glob(filepath.Join(confDir, "cmd", "*"))
 	if err != nil {
