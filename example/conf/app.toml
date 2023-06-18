@@ -1,0 +1,10 @@
+Port = 8310
+Title = "default title"
+Intro = "hello.world@example.com"
+Timeout = 60
+#BasicAuth = "admin:psw"
+CacheDir = "../cache_data/"
+Charset = "utf-8"
+CharsetList = ["utf-8"]
+
+[Commands]

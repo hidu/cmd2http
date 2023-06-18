@@ -1,7 +1,5 @@
 package main
 
-//go:generate goasset asset.json
-
 import (
 	"flag"
 	"fmt"
@@ -11,7 +9,7 @@ import (
 	"github.com/hidu/cmd2http/internal"
 )
 
-var configPath = flag.String("conf", "./conf/cmd2http.json", "json config file")
+var configPath = flag.String("conf", "./conf/app.toml", "app config file")
 var port = flag.Int("port", 0, "overwrite the port in the config file")
 var auth = flag.String("auth", "", "overwrite the BasicAuth in the config file")
 

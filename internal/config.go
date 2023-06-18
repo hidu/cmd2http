@@ -79,6 +79,21 @@ func (cfg *Config) getCharset() string {
 	return "utf-8"
 }
 
+func (cfg *Config) user(name string) (psw string, ok bool) {
+	list := strings.Split(cfg.BasicAuth, ";")
+	for _, item := range list {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		arr := strings.SplitN(item, ":", 2)
+		if arr[0] == name {
+			return arr[1], true
+		}
+	}
+	return "", false
+}
+
 func (cfg *Config) String() string {
 	d, _ := json.MarshalIndent(cfg, "", "  ")
 	return string(d)

@@ -1,13 +1,17 @@
 package internal
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/fsgo/fsgo/fshtml"
 )
@@ -196,6 +200,40 @@ func (srv *Server) checkAuth(w http.ResponseWriter, r *http.Request) (ret bool) 
 	if srv.config.BasicAuth == "" {
 		return true
 	}
+	if srv.checkMD5Auth(w, r) {
+		return true
+	}
+	return srv.checkBasicAuth(w, r)
+}
+
+func (srv *Server) checkMD5Auth(w http.ResponseWriter, r *http.Request) (ret bool) {
+	user := r.Header.Get("AK")
+	if user == "" {
+		return false
+	}
+
+	psw, ok := srv.config.user(user)
+	if !ok {
+		return false
+	}
+	tm := r.Header.Get("TM")
+
+	tmInt, _ := strconv.ParseInt(tm, 10, 64)
+	now := time.Now().Unix()
+	if tmInt < now-5 || tmInt > now+5 {
+		return false
+	}
+
+	tk := r.Header.Get("TK")
+	m5 := md5.New()
+	m5.Write([]byte(user))
+	m5.Write([]byte(tm))
+	m5.Write([]byte(psw))
+	want := hex.EncodeToString(m5.Sum(nil))
+	return tk == want
+}
+
+func (srv *Server) checkBasicAuth(w http.ResponseWriter, r *http.Request) (ret bool) {
 	doLogin := func() {
 		w.Header().Set("WWW-authenticate", `Basic realm="need login"`)
 		w.Header().Set("Content-Type", "text/html;charset=utf-8")
@@ -215,16 +253,10 @@ func (srv *Server) checkAuth(w http.ResponseWriter, r *http.Request) (ret bool) 
 		doLogin()
 		return false
 	}
-	list := strings.Split(srv.config.BasicAuth, ";")
-	for _, item := range list {
-		item = strings.TrimSpace(item)
-		if item == "" {
-			continue
-		}
-		arr := strings.SplitN(item, ":", 2)
-		if arr[0] == user && arr[1] == psw {
-			return true
-		}
+
+	password, ok := srv.config.user(user)
+	if ok && psw == password {
+		return true
 	}
 	doLogin()
 	return false
