@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/fsgo/fscache v0.0.0-20230610145917-6229bac2f6e5
 	github.com/fsgo/fsconf v0.2.11-0.20230405134610-720d6a2f54bf
-	github.com/fsgo/fsgo v0.0.7-0.20230604134926-0be4746b5f58
+	github.com/fsgo/fsgo v0.0.7-0.20230702142602-a67df8aea72d
 )
 
 require (
@@ -18,7 +18,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

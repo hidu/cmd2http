@@ -41,7 +41,7 @@ func checkDir(fp string) error {
 func LoadParamValuesFromFile(filePath string) (values []string) {
 	bf, err := os.ReadFile(filePath)
 	if err != nil {
-		return
+		return nil
 	}
 	lines := strings.Split(string(bf), "\n")
 	for _, line := range lines {
@@ -51,5 +51,5 @@ func LoadParamValuesFromFile(filePath string) (values []string) {
 		}
 		values = append(values, line)
 	}
-	return
+	return values
 }

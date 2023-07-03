@@ -76,10 +76,10 @@ func (srv *Server) helpPageCreate() {
 					for _, _v := range _paramValues {
 						_optionKey := _v
 						_optionVal := _v
-						_pos := strings.Index(_v, ":")
-						if _pos > -1 {
-							_optionKey = strings.TrimSpace(_v[:_pos])
-							_optionVal = strings.TrimSpace(_v[_pos+1:])
+						pos := strings.Index(_v, "|")
+						if pos > -1 {
+							_optionKey = strings.TrimSpace(_v[:pos])
+							_optionVal = strings.TrimSpace(_v[pos+1:])
 						}
 
 						opt := fshtml.NewAny("option")
