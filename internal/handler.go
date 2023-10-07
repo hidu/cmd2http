@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -9,14 +10,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"text/template"
 	"time"
 
 	"github.com/fsgo/fsgo/fshtml"
 )
-
-var htmls = make(map[string]string)
 
 const formatLi = `
 <li>format:<select name='format'>
@@ -35,7 +33,7 @@ const cacheLiTPL = `
 </select>
 </li>`
 
-func (srv *Server) helpPageCreate() {
+func (srv *Server) helpPageCreate(ctx context.Context) map[string]string {
 	tabsBd := "<div class='bd'>"
 	groups := make(map[string][]string, len(srv.config.Commands))
 
@@ -44,7 +42,7 @@ func (srv *Server) helpPageCreate() {
 		groups[groupName] = append(groups[groupName], name)
 
 		tabsBd += "\n\n<div class='cmd_div' id='div_" + name + "' style='display:none'>\n"
-		_formStr := ` <form action='/%s' methor='get' onsubmit='return form_check(this,"%s")' id='form_%s'>`
+		_formStr := ` <form action='/%s' method='get' onsubmit='return form_check(this,"%s")' id='form_%s'>`
 		tabsBd += fmt.Sprintf(_formStr, name, name, name)
 		tabsBd += "<div class='note note-g'><div><b>URI</b> :&nbsp;/" + name + "</div>" +
 			"<div><b>Command</b> :&nbsp;[&nbsp;" + item.Command + "&nbsp;]&nbsp;" +
@@ -67,7 +65,7 @@ func (srv *Server) helpPageCreate() {
 				}
 				tabsBd += "<li>" + param.name + ":"
 
-				_paramValues := param.getValues()
+				_paramValues := param.getValues(ctx, item)
 
 				if len(_paramValues) == 0 {
 					tabsBd += "<input class='r-text p_" + param.name + "' type='text' name='" + param.name + "' " + placeholder + ">"
@@ -143,14 +141,15 @@ func (srv *Server) helpPageCreate() {
 		}
 	}
 	contentMenu += "</dl>"
-	htmls["body"] = tabsStr
-	htmls["menu"] = contentMenu
+	codes := map[string]string{
+		"menu": contentMenu,
+		"body": tabsStr,
+	}
+	return codes
 }
 
-var helpOnce sync.Once
-
 func (srv *Server) handlerHelp(w http.ResponseWriter, r *http.Request) {
-	helpOnce.Do(srv.helpPageCreate)
+	codes := srv.helpPageCreate(r.Context())
 
 	var tabsStr string
 	if IsFileExists("./s/my.css") {
@@ -160,14 +159,14 @@ func (srv *Server) handlerHelp(w http.ResponseWriter, r *http.Request) {
 	if IsFileExists("./s/my.js") {
 		tabsStr += "<script src='/s/my.js'></script>"
 	}
-	tabsStr += htmls["body"]
+	tabsStr += codes["body"]
 
 	tpl, _ := template.New("page").Parse(helpTPL)
 	values := make(map[string]string)
 	values["version"] = version
 	values["title"] = srv.config.Title
 	values["content_body"] = tabsStr
-	values["content_menu"] = htmls["menu"]
+	values["content_menu"] = codes["menu"]
 	values["intro"] = srv.config.Intro
 
 	w.Header().Add("c2h", version)
@@ -197,7 +196,7 @@ func (srv *Server) index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) checkAuth(w http.ResponseWriter, r *http.Request) (ret bool) {
-	if srv.config.BasicAuth == "" {
+	if len(srv.config.Users) == 0 {
 		return true
 	}
 	if srv.checkMD5Auth(w, r) {
@@ -220,7 +219,7 @@ func (srv *Server) checkMD5Auth(w http.ResponseWriter, r *http.Request) (ret boo
 
 	tmInt, _ := strconv.ParseInt(tm, 10, 64)
 	now := time.Now().Unix()
-	if tmInt < now-5 || tmInt > now+5 {
+	if tmInt < now-15 || tmInt > now+15 {
 		return false
 	}
 

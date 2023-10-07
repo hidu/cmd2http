@@ -24,14 +24,15 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
 
 ##配置说明
 
-###目录结构
+### 目录结构
 
 ```
-├── cmds
+Root
+├── shell
 │   ├── ls.sh
 │   └── sleep.sh
 ├── conf
-│   ├── cmd2http.json
+│   ├── app.toml
 │   ├── cmd
 │   │   ├── echo.json
 │   │   ├── ls.json
@@ -46,37 +47,44 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
     └── ls_d.csv
 
 ```
+配置文件里的基准目录为 上述 `Root`,即程序在启动加载主配置文件（conf/app.toml）后,
+会 chdir(dir(dir(conf/app.toml))) 里去。
 
 ### 主配置文件 
 支持 `.json`、`.toml` 后缀的文件。
 
-如 `conf/cmd2http.json`:
-```json
-{
-   "Port":8310,
-   "Title":"default title",
-   "Intro":"intro info",
-   "Timeout":30,
-   "CacheDir":"../cache_data/",
-   "Charset":"utf-8",
-   "Charsets": [
-        "gbk",
-        "utf-8"
-    ],
-   "Commands":{
-      "pwd":{
-          "Command":"pwd",
-          "Intro":"cmd intor",
-          "Timeout":10
-       },
-      "echo":{
-         "Command":"echo -n $wd|你好 $a $b",
-         "Cache":120
-        }
-   }
-}
+如 `conf/app.toml`:
+```toml
+# 服务监听的端口
+Listen = ":8310"
+
+Title = "default title"
+
+Intro = "hello.world@example.com"
+
+# 超时时间，单位秒，可选，默认值为 30
+Timeout = 60
+
+# 缓存目录,可选，默认为 ./tmp
+# CacheDir = "./cache_data/"
+
+# 页面默认的编码,可选，默认为 utf-8
+# Charset = "utf-8"
+
+# 页面可选的编码，可选，默认为 "utf-8", "gbk", "gb2312"
+# CharsetList = ["utf-8"]
+
+#[Users] 用户账号和密码，可选
+#admin="psw"
+
+# Commands 命令，可选，也可以在单独的文件里( conf/cmd/*.toml )配置
+[Commands]
+[Commands.pwd1]
+Command = "pwd" # 必填字段，执行的命令
+Intro  = "可选字段，介绍这个命令的用途"
+Timeout = 10 # 可选字段，超时时间，不配置的时候使用全局的值
 ```
-命令配置(Commands)(如上的pwd，echo)也可以配置到单独的文件，位于上述配置文件(cmd2http.json)目录下的 `cmd` 子目录下去。  
+命令配置(Commands)(如上的pwd，echo)也可以配置到单独的文件，位于上述配置文件( `app.toml` )目录下的 `cmd` 子目录下去。  
 
 所以在配置文件中写的路径都使用以此为基准目录的相对路径即可。 
 
@@ -88,6 +96,7 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
 *   CacheDir  : 运行结果缓存存放的目录（单项命令中配置了 Cache 项后生效）
 *   Charset   : 全局默认的编码，只用于 HTML 页面结果展现
 *   Charsets  : 全局默认的编码可选值，只用于 HTML 页面结果展现
+*   Users     :  用户账号和密码，可选，当配置之后，访问页面需要 Basic 校验。
 
 ### 命令配置文件
 支持 `.json`、`.toml` 后缀的文件，配置文件存放于 `conf/cmd/` 目录。
@@ -95,7 +104,7 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
 `ls.json` 内容为：
 ```json
 {
-    "Command": "../cmds/ls.sh a $a b $b $c $d|你好",
+    "Command": "shell/ls.sh a $a b $b $c $d|你好",
     "Intro": "hello",
     "Timeout": 3,
     "Cache": 1800,
@@ -111,7 +120,7 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
             "HTML": "style='width:200px'"
         },
         "d": {
-            "ValuesFile": "../data/ls_d.csv"
+            "ValuesFile": "data/ls_d.csv"
         }
     }
 }
@@ -125,18 +134,19 @@ Command   Exec : <b>echo -n hello world defaultValue</b>
 *  Params.c : 参数 `$c`的配置项
 *  Params.c.Values : 参数 `$c`的可选值，用来在 form 表单中展现，只能是字符串,values 有值的情况下使用 select 展现样式，否则为 input=text
 *  Params.c.HTML : 参数 `$c`的 form 控件额外的 HTML 代码块
-*  Params.c.ValuesFile : 参数 `$c`的可选值录入文件(eg:[可选值示例文件](./example/data/ls_d.csv))
+*  Params.c.ValuesFile : 参数 `$c`的可选值录入文件(eg:[可选值示例文件](./example/data/ls_d.csv))。
+   若是 ".sh" 类型的文件，会执行将其输出作为参数。若解析文件失败，会将 error 作为值返回。
 *  Charset   : 默认的编码，只用于 HTML 页面结果展现
 *  Charsets  : 默认的编码可选值，只用于 HTML 页面结果展现
 *  Group     :  页面展现分组，默认为`default`
 
 ### 命令如何读取参数
 ```
-"Command": "../cmds/ls.sh a $a b $b $c $d|你好"
+"Command": "shell/ls.sh a $a b $b $c $d|你好"
 ```
-如上，命令中定义了很多参数，`ls.sh`一共可以读取到6个参数，其中 字符串`a`,`b` 是固定的，`$a $b $c $d` 这几个则可以从http接口读取到。  
-`$d|你好` 表示当http接口读取到的值为空时的默认值。  
-通过http接口调用时，等效于 这样调用 `../cmds/ls.sh a "$a的值" b "$b的值" "$c的值" "$d的值"`  
+如上，命令中定义了很多参数，`ls.sh`一共可以读取到6个参数，其中 字符串`a`,`b` 是固定的，`$a $b $c $d` 这几个则可以从 HTTP 接口读取到。  
+`$d|你好` 表示当 HTTP 接口读取到的值为空时的默认值。  
+通过 HTTP 接口调用时，等效于 这样调用 `shell/ls.sh a "$a的值" b "$b的值" "$c的值" "$d的值"`  
 
 在shell中你可以这样获取参数值:
 ```
@@ -148,16 +158,21 @@ echo "第4个参数:$4"
 ```
 
 或者这样(使用环境变量)：
-```
+```bash
 echo '$a的值:' $c2h_form_a
 echo '$b的值:' $c2h_form_b
 echo '$c的值:' $c2h_form_c
 echo '$d的值:' $c2h_form_d
 ```
-统一使用了前缀 <font color=blue>c2h_form_</font> 以和其他环境变量区分开！ 
+统一使用了前缀 <font color=blue> c2h_form_ </font> 以和其他环境变量区分开！ 
 
+请求方信息：
+```bash
+echo 'remoteIP:' $c2h_req_RemoteIP      # 192.168.1.1
+echo 'remoteAddr:' $c2h_req_RemoteAddr  # 192.168.1.1:23458
+```
 
-##页面自定义
+## 页面自定义
 若需要自定义首页，可以使用`/s/index.html`  
 或者使用`/s/my.css` 和 `/s/my.js` 来自己对页面进行控制或者自定义  
 `/s/` 是当前配置文件目录下的子目录  
@@ -186,7 +201,7 @@ function form_sleep_jsonp(data){
 这样调用即可，参数 `format` 是用于控制输出内容格式的，接口调用的时候直接使用 `format=plain` 即可。  
 下面运行界面截图中展现的连接地址即为 API 调用地址。  
 
-##界面截图
+## 界面截图
 ![界面截图](http://hidu.github.io/cmd2http/screenshot/index.png)
 
 

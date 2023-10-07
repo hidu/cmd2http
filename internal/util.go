@@ -1,7 +1,10 @@
 package internal
 
 import (
+	"context"
+	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -38,12 +41,20 @@ func checkDir(fp string) error {
 }
 
 // LoadParamValuesFromFile load values file as  slice
-func LoadParamValuesFromFile(filePath string) (values []string) {
-	bf, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil
+func LoadParamValuesFromFile(ctx context.Context, file string) (values []string) {
+	var content []byte
+	var err error
+	if strings.HasSuffix(file, ".sh") {
+		cmd := exec.CommandContext(ctx, file)
+		content, err = cmd.Output()
+	} else {
+		content, err = os.ReadFile(file)
 	}
-	lines := strings.Split(string(bf), "\n")
+	if err != nil {
+		log.Printf("LoadParamValuesFromFile(%q) failed, error=%v\n", file, err)
+		return []string{"Error:" + err.Error()}
+	}
+	lines := strings.Split(string(content), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" || line[0] == '#' {

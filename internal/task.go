@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"html"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -56,7 +56,10 @@ func (tk *Task) Close() {
 	log.Println(strings.Join(tk.logInfo, " "), used)
 }
 
-var _paramPrefix = "c2h_form_"
+const (
+	envFormPrefix = "c2h_form_"
+	envReqPrefix  = "c2h_req_"
+)
 
 func (tk *Task) tryExecCmd() {
 	conf, has := tk.srv.config.Commands[tk.Path]
@@ -68,7 +71,13 @@ func (tk *Task) tryExecCmd() {
 	}
 
 	args := make([]string, 0, len(conf.paramsAll))
-	env := make(map[string]string)
+
+	remoteIP, _, _ := net.SplitHostPort(tk.Request.RemoteAddr)
+
+	env := map[string]string{
+		envReqPrefix + "RemoteAddr": tk.Request.RemoteAddr,
+		envReqPrefix + "RemoteIP":   remoteIP,
+	}
 
 	for _, param := range conf.paramsAll {
 		if !param.isValParam {
@@ -95,13 +104,12 @@ func (tk *Task) tryExecCmd() {
 			continue
 		}
 		args = append(args, val)
-		env[_paramPrefix+param.name] = val
+		env[envFormPrefix+param.name] = val
 	}
 
 	for k, v := range tk.Request.Form {
-		_key := _paramPrefix + k
-		_, has := env[_key]
-		if !has {
+		_key := envFormPrefix + k
+		if _, ok := env[_key]; !ok {
 			env[_key] = strings.Join(v, "\t")
 		}
 	}
@@ -139,7 +147,6 @@ func (tk *Task) exec() {
 
 	name, args := tk.fixArgs(conf.cmdName, tk.cmdArgs)
 	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Dir = filepath.Dir(conf.confDir)
 	log.Println("exec:", cmd.String())
 	// when use cache,disable the env params
 	env := os.Environ()

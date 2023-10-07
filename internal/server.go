@@ -1,10 +1,10 @@
 package internal
 
 import (
-	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/fsgo/fscache"
 	"github.com/fsgo/fscache/filecache"
@@ -23,13 +23,23 @@ func NewServer(confPath string) *Server {
 	return server
 }
 
-// SetPort set cmd server http port
-func (srv *Server) SetPort(port int) {
-	srv.config.Port = port
+// SetListen set cmd server http port
+func (srv *Server) SetListen(addr string) {
+	srv.config.Listen = addr
 }
 
-func (srv *Server) SetBasicAuth(auth string) {
-	srv.config.BasicAuth = auth
+func (srv *Server) SetUsers(users string) {
+	srv.config.Users = make(map[string]string)
+	if users == "no" {
+		return
+	}
+	list := strings.Split(users, ";")
+	for _, item := range list {
+		u, p, ok := strings.Cut(item, ":")
+		if ok {
+			srv.config.Users[u] = p
+		}
+	}
 }
 
 // Run start http server
@@ -44,7 +54,7 @@ func (srv *Server) Run() error {
 	http.HandleFunc("/help", srv.handlerHelp)
 	http.HandleFunc("/", srv.index)
 
-	addr := fmt.Sprintf(":%d", srv.config.getPort())
+	addr := srv.config.getListen()
 	log.Println("listen at:", addr)
 
 	srv.setupCache()

@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -14,7 +16,7 @@ import (
 )
 
 type Config struct {
-	Port     int // 服务端口，可选，默认 8310
+	Listen   string // 服务端口，可选，默认 ":8310"
 	Title    string
 	Intro    string
 	Timeout  int      // 超时时间，单位秒，默认 30s
@@ -23,19 +25,17 @@ type Config struct {
 	Commands map[string]*cmdConfig
 	LogPath  string
 	CacheDir string
-
-	TmpDir string // 运行临时数据目录，可选，默认是和配置文件平行的 tmp 目录
-
-	BasicAuth string // 采用 Basic 认证的账号和密码，如 user:psw
+	TmpDir   string            // 运行临时数据目录，可选，默认是和配置文件平行的 tmp 目录
+	Users    map[string]string // 账号和密码，如 user:psw,可选
 
 	confDir string // 配置文件所在目录
 }
 
-func (cfg *Config) getPort() int {
-	if cfg.Port > 0 {
-		return cfg.Port
+func (cfg *Config) getListen() string {
+	if cfg.Listen != "" {
+		return cfg.Listen
 	}
-	return 8310
+	return ":8310"
 }
 
 func (cfg *Config) getTimeout() int {
@@ -79,16 +79,10 @@ func (cfg *Config) getCharset() string {
 	return "utf-8"
 }
 
-func (cfg *Config) user(name string) (psw string, ok bool) {
-	list := strings.Split(cfg.BasicAuth, ";")
-	for _, item := range list {
-		item = strings.TrimSpace(item)
-		if item == "" {
-			continue
-		}
-		arr := strings.SplitN(item, ":", 2)
-		if arr[0] == name {
-			return arr[1], true
+func (cfg *Config) user(name string) (psw string, found bool) {
+	for userName, userPsw := range cfg.Users {
+		if userName == name {
+			return userPsw, true
 		}
 	}
 	return "", false
@@ -232,11 +226,11 @@ func (p *cmdParam) ToString() string {
 	return fmt.Sprintf("name:%s,default:%s,isValParam:%v", p.name, p.Default, p.isValParam)
 }
 
-func (p *cmdParam) getValues() []string {
+func (p *cmdParam) getValues(ctx context.Context, cmd *cmdConfig) []string {
 	if p.ValuesFile == "" {
 		return p.Values
 	}
-	return LoadParamValuesFromFile(p.ValuesFile)
+	return LoadParamValuesFromFile(ctx, p.ValuesFile)
 }
 
 var cmdFileNameReg = regexp.MustCompile(`^[A-Za-z0-9_]+\.(json|toml|yml)$`)
@@ -248,17 +242,23 @@ func loadConfig(confPath string) *Config {
 	}
 	pathAbs, err := filepath.Abs(confPath)
 	if err != nil {
-		log.Fatalf("filepath.Abs(%q): %v", confPath, err)
+		log.Fatalf("filepath.Abs(%q): %v\n", confPath, err)
 	}
 	confDir := filepath.Dir(pathAbs)
+	rootDir := filepath.Dir(confDir)
+
+	if err = os.Chdir(rootDir); err != nil {
+		log.Fatalf("chdir(%q): %v\n", rootDir, err)
+	}
+
 	cfg.confDir = confDir
 
 	if cfg.TmpDir == "" {
-		cfg.TmpDir = filepath.Join(filepath.Dir(confDir), "tmp")
+		cfg.TmpDir = filepath.Join(rootDir, "tmp")
 	}
 
 	if err = checkDir(cfg.TmpDir); err != nil {
-		log.Fatalf("check tmpDir %q failed:%v\n", cfg.TmpDir, err)
+		log.Fatalf("check tmpDir %q failed: %v\n", cfg.TmpDir, err)
 	}
 
 	fileNames, err := filepath.Glob(filepath.Join(confDir, "cmd", "*"))
@@ -282,13 +282,19 @@ func loadConfig(confPath string) *Config {
 			log.Println("load cmd from [", fileName, "] failed,err:", err)
 			continue
 		}
-		cmd.cfg = cfg
 		cmd.confDir = filepath.Dir(cmdFilePath)
 		ext := filepath.Ext(fileName)
 		cmdName := fileName[:len(fileName)-len(ext)]
 		cmd.name = cmdName
 		log.Println("load cmd [", cmdName, "] from [", fileName, "],success")
 		cfg.Commands[cmdName] = cmd
+	}
+
+	for _, item := range cfg.Commands {
+		item.cfg = cfg
+		if item.confDir == "" {
+			item.confDir = cfg.confDir
+		}
 	}
 
 	cfg.parse()

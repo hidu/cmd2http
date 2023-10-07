@@ -10,18 +10,22 @@ import (
 )
 
 var configPath = flag.String("conf", "./conf/app.toml", "app config file")
-var port = flag.Int("port", 0, "overwrite the port in the config file")
-var auth = flag.String("auth", "", "overwrite the BasicAuth in the config file")
+var listen = flag.String("listen", "", "overwrite the Listen Addr in the config file")
+var users = flag.String("users", "", `overwrite the Users in the config file.
+e.g.: 
+    user1:psw1             --> Only one user
+    user1:psw1;user2:psw2  --> Two users
+    no                     --> No login required
+`)
 
 func main() {
 	flag.Parse()
-
 	server := internal.NewServer(*configPath)
-	if *port > 0 {
-		server.SetPort(*port)
+	if *listen != "" {
+		server.SetListen(*listen)
 	}
-	if *auth != "" {
-		server.SetBasicAuth(*auth)
+	if *users != "" {
+		server.SetUsers(*users)
 	}
 
 	log.Println("exit:", server.Run())
@@ -32,6 +36,9 @@ func init() {
 
 	flag.Usage = func() {
 		df()
-		fmt.Fprint(os.Stderr, "\n convert CLI as HTTP service\n https://github.com/hidu/cmd2http/\n")
+		fmt.Fprint(os.Stderr, `
+convert CLI as HTTP service
+Site: https://github.com/hidu/cmd2http/
+`)
 	}
 }

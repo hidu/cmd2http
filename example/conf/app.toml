@@ -1,10 +1,29 @@
-Port = 8310
-Title = "default title"
-Intro = "hello.world@example.com"
-Timeout = 60
-#BasicAuth = "admin:psw"
-CacheDir = "../cache_data/"
-Charset = "utf-8"
-CharsetList = ["utf-8"]
+# 服务监听的端口
+Listen = ":8310"
 
+Title = "default title"
+
+Intro = "hello.world@example.com"
+
+# 超时时间，单位秒，可选，默认值为 30
+Timeout = 60
+
+# 缓存目录,可选，默认为 ./tmp
+# CacheDir = "./cache_data/"
+
+# 页面默认的编码,可选，默认为 utf-8
+# Charset = "utf-8"
+
+# 页面可选的编码，可选，默认为 "utf-8", "gbk", "gb2312"
+# CharsetList = ["utf-8"]
+
+#[Users] 用户账号和密码，可选
+#admin="psw"
+
+# Commands 命令，可选，也可以在单独的文件里( conf/cmd/*.toml )配置
 [Commands]
+[Commands.pwd1]
+Command = "pwd" # 必填字段，执行的命令
+Intro  = "可选字段，介绍这个命令的用途"
+Timeout = 10 # 可选字段，超时时间，不配置的时候使用全局的值
+
