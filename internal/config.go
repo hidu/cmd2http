@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/fsgo/fsconf/confext"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,6 +15,10 @@ import (
 
 	"github.com/fsgo/fsconf"
 )
+
+func init() {
+	confext.Init()
+}
 
 type Config struct {
 	Listen   string // 服务端口，可选，默认 ":8310"
